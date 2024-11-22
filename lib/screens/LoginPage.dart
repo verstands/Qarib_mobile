@@ -1,10 +1,13 @@
 import 'package:emol/Translate/TranslatePage.dart';
+import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/SignUp.dart';
+import 'package:emol/services/LoginService.dart';
 import 'package:emol/utils/Menu.dart';
+import 'package:emol/utils/ToastUtil.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   String _languageCode = "";
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,16 +31,54 @@ class _LoginPageState extends State<LoginPage> {
     print(_languageCode);
   }
 
- @override
+    void _loginUser() async {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _isLoading = true;
+        });
+
+        ApiResponse<Map<String, dynamic>> response =
+            await SignInService(_emailController.text, _passwordController.text);
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (response.erreur == null && response.data != null) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          String token = response.data!['token'] ?? '';
+          String id = response.data!['id'] ?? '';
+          String nom = response.data!['noms'] ?? '';
+          String telephone = response.data!['telephone'] ?? '';
+          String email = response.data!['email'] ?? '';
+
+          await prefs.setString('token', token);
+          await prefs.setString('agent_id', id);
+          await prefs.setString('agent_nom', nom);
+          await prefs.setString('agent_telephone', telephone);
+          await prefs.setString('agent_email', email);
+
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => MenuUtils()),
+              (route) => false);
+        } else {
+           EasyLoading.showError(response.erreur ?? "");
+        }
+      }
+    }
+
+  @override
   void initState() {
     super.initState();
     _loadLanguage();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration( 
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFFFA726), Color(0xFFFF7043)],
             begin: Alignment.topCenter,
@@ -65,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 const SizedBox(height: 20.0),
-                 Text(
+                Text(
                   Translations.get('Bienvenue', _languageCode),
                   style: const TextStyle(
                     fontSize: 24,
@@ -75,8 +117,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 10.0),
 
-                 Text(
-                  Translations.get('Connectez_vous_pour_continuer', _languageCode),
+                Text(
+                  Translations.get(
+                      'Connectez_vous_pour_continuer', _languageCode),
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const SizedBox(height: 40.0),
@@ -100,10 +143,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_email', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_email', _languageCode);
                     } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                         .hasMatch(value)) {
-                      return Translations.get('Veuillez_entrer_un_email_valide', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_un_email_valide', _languageCode);
                     }
                     return null;
                   },
@@ -116,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
                         // Ajoutez ici la logique pour la réinitialisation du mot de passe
                         Navigator.pushNamed(context, '/reset-password');
                       },
-                      child:  Text(
+                      child: Text(
                         Translations.get('Mot_de_passe_oublie', _languageCode),
                         style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold),
@@ -144,9 +189,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_mot_de_passe', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_mot_de_passe', _languageCode);
                     } else if (value.length < 6) {
-                      return Translations.get('Le_mot_de_passe_doit_contenir_au_moins_6_caractères', _languageCode);
+                      return Translations.get(
+                          'Le_mot_de_passe_doit_contenir_au_moins_6_caractères',
+                          _languageCode);
                     }
                     return null;
                   },
@@ -154,27 +202,36 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24.0),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (context) => MenuUtils()),
-                          (route) => false,
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15), // Ajuste la hauteur
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                    child:  Text(
-                      Translations.get('Se_connecter', _languageCode),
-                      style: TextStyle(fontSize: 16, color: Colors.orange),
-                    ),
-                  ),
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            color: Colors
+                                .orange,
+                          ),
+                        )
+                      : ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              if (_isLoading) {
+                                return;
+                              } else {
+                                _loginUser();
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          child: Text(
+                            Translations.get('Se_connecter', _languageCode),
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.orange),
+                          ),
+                        ),
                 ),
 
                 const SizedBox(height: 16.0),
@@ -182,7 +239,7 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {},
                   icon: const Icon(Icons.g_mobiledata, color: Colors.white),
                   label: Text(
-                     Translations.get('Continuer_avec_Google', _languageCode),
+                    Translations.get('Continuer_avec_Google', _languageCode),
                     style: TextStyle(color: Colors.white),
                   ),
                   style: OutlinedButton.styleFrom(
@@ -199,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   icon: const Icon(Icons.apple,
                       color: Colors.white), // Icône Apple
-                  label:  Text(
+                  label: Text(
                     Translations.get('Continuer_avec_Apple', _languageCode),
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
@@ -225,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
                         MaterialPageRoute(builder: (context) => SignUpPage()),
                         (route) => false);
                   },
-                  child:  Text(
+                  child: Text(
                     Translations.get('Pas_de_compte_sinscrire', _languageCode),
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),

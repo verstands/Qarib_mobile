@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -8,9 +12,48 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String username = "Rabby KIkwele";
-  String email = "rabby@example.com";
-  String avatarUrl = "https://www.example.com/avatar.jpg"; 
+  String username = "";
+  String email = "";
+  String avatarUrl = "https://www.example.com/avatar.jpg"; // Image par défaut
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData(); 
+  }
+
+  // Fonction pour récupérer les informations stockées dans SharedPreferences
+  _loadProfileData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('agent_nom') ?? "Nom non disponible";
+      email = prefs.getString('agent_email') ?? "Email non disponible";
+      // Tu peux également récupérer l'URL de l'avatar ici si tu en as une dans SharedPreferences
+    });
+  }
+
+ Future<void> _chooseImageFromGallery() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        avatarUrl = image.path;
+      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('avatar_url', avatarUrl);
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() {
+        avatarUrl = image.path; 
+      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('avatar_url', avatarUrl);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +69,37 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(
-              child: CircleAvatar(
-                radius: 80.0,
-                backgroundImage: NetworkImage(avatarUrl),
-                backgroundColor: Colors.grey[200],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: _chooseImageFromGallery,
+                  child: CircleAvatar(
+                    radius: 80.0,
+                    backgroundImage: avatarUrl.startsWith('http')
+                        ? NetworkImage(avatarUrl)
+                        : FileImage(File(avatarUrl)) as ImageProvider,
+                    backgroundColor: Colors.grey[200],
+                  ),
+                ),
+                
+              ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: Icon(Icons.camera_alt, color: Colors.orange, size: 30),
+                  onPressed: _takePhoto,
+                ),
+                IconButton(
+                  icon: Icon(Icons.image, color: Colors.orange, size: 30),
+                  onPressed: _chooseImageFromGallery, 
+                ),
+              ],
+            ),
+           
             const SizedBox(height: 16),
             Text(
               username,
@@ -52,16 +119,15 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 40),
-            // Boutons pour modifier les informations du profil
             _buildActionButton(
               icon: Icons.edit,
               label: "Modifier le profil",
               color: Colors.orange,
               onPressed: () {
                 setState(() {
-                  username = "Rabby KIkwele";
-                  email = "rabby@example.com";
-                  avatarUrl = "https://www.example.com/new_avatar.jpg";  // URL de l'avatar modifié
+                  username = username;
+                  email = email;
+                  avatarUrl = "https://www.example.com/new_avatar.jpg"; 
                 });
               },
             ),

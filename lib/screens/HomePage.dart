@@ -11,11 +11,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late GoogleMapController mapController;
-
-  // Coordonnées initiales (centre de la carte)
-  final LatLng _initialPosition = const LatLng(48.8566, 2.3522); // Paris
-
-  // Liste des services avec icônes et coordonnées
+  final LatLng _initialPosition = const LatLng(48.8566, 2.3522);
   final List<Service> _services = [
     Service(
       name: "Plombier",
@@ -37,70 +33,106 @@ class _HomePageState extends State<HomePage> {
       position: const LatLng(48.8866, 2.3522),
       icon: Icons.local_hospital,
     ),
-    // Ajout des nouveaux services pour Indrive
     Service(
       name: "Peintre",
       position: const LatLng(
-          48.8576, 2.3622), // Exemple de position pour le service moto
+          48.8576, 2.3622),
       icon: Icons.brush,
     ),
     Service(
       name: "Maçon",
       position: const LatLng(
-          48.8676, 2.3733), // Exemple de position pour le service vélo
+          48.8676, 2.3733),
       icon: Icons.construction,
     ),
     Service(
       name: "Menuisier",
       position: const LatLng(
-          48.8776, 2.3844), // Exemple de position pour le service scooter
+          48.8776, 2.3844), 
       icon: Icons.chair,
     ),
     Service(
       name: "Couturier",
       position: const LatLng(48.8876,
-          2.3955), // Exemple de position pour le service véhicule électrique
+          2.3955),
       icon: Icons.dry_cleaning,
     ),
     Service(
       name: "Avocat",
       position: const LatLng(
-          48.8976, 2.4066), // Exemple de position pour le service taxi
+          48.8976, 2.4066),
       icon: Icons.account_balance,
     ),
     Service(
       name: "Cameraman",
       position: const LatLng(
-          48.9076, 2.4177), // Exemple de position pour l'assistance routière
+          48.9076, 2.4177), 
       icon: Icons.videocam,
     ),
   ];
 
   final TextEditingController _serviceNameController = TextEditingController();
 
-  Set<Marker> get _markers {
+   Set<Marker> get _markers {
     return _services.map((service) {
       return Marker(
         markerId: MarkerId(service.name),
         position: service.position,
-        infoWindow: InfoWindow(
-          title: service.name,
-        ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueAzure), // Couleur de l'icône
+        infoWindow: InfoWindow(title: service.name),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       );
     }).toSet();
   }
 
+ @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _moveCameraToFitServices());
+  }
+
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    _moveCameraToFitServices();
+  }
+
+  void _moveCameraToFitServices() {
+    if (_services.isEmpty) return;
+
+    LatLngBounds bounds = _services.fold(
+      LatLngBounds(
+        southwest: _services.first.position,
+        northeast: _services.first.position,
+      ),
+      (LatLngBounds current, Service service) {
+        return LatLngBounds(
+          southwest: LatLng(
+            current.southwest.latitude < service.position.latitude
+                ? current.southwest.latitude
+                : service.position.latitude,
+            current.southwest.longitude < service.position.longitude
+                ? current.southwest.longitude
+                : service.position.longitude,
+          ),
+          northeast: LatLng(
+            current.northeast.latitude > service.position.latitude
+                ? current.northeast.latitude
+                : service.position.latitude,
+            current.northeast.longitude > service.position.longitude
+                ? current.northeast.longitude
+                : service.position.longitude,
+          ),
+        );
+      },
+    );
+
+    mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
 
   void _showSearchBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: false,
-      backgroundColor: Colors.white.withOpacity(0.9), // Légèrement transparent
+      backgroundColor: Colors.white.withOpacity(0.9),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
@@ -108,7 +140,7 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.5, // 50% de la hauteur de l'écran
+          heightFactor: 0.5, 
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
             child: Column(
@@ -124,7 +156,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     IconButton(
                       onPressed: () =>
-                          Navigator.pop(context), // Fermer la feuille
+                          Navigator.pop(context),
                       icon: const Icon(Icons.close, color: Colors.grey),
                     ),
                   ],
@@ -139,14 +171,13 @@ class _HomePageState extends State<HomePage> {
                     prefixIcon: const Icon(Icons.search),
                   ),
                   onChanged: (value) {
-                    // Implémentez ici la logique de recherche
+              
                   },
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    // Action pour rechercher
-                    Navigator.pop(context); // Fermer la feuille
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
@@ -174,14 +205,13 @@ class _HomePageState extends State<HomePage> {
       builder: (context) {
         return FractionallySizedBox(
           heightFactor:
-              0.7, // Augmente la taille pour permettre plus de contenu
+              0.7,
           child: Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Titre avec l'icône de fermeture
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -201,13 +231,11 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 const SizedBox(height: 8.0),
-
-                // Contenu défilant (scrollable)
                 Expanded(
                   child: GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3, // 3 services par ligne
+                      crossAxisCount: 3, 
                       crossAxisSpacing: 8.0,
                       mainAxisSpacing: 8.0,
                     ),
@@ -216,7 +244,7 @@ class _HomePageState extends State<HomePage> {
                       final service = _services[index];
                       return GestureDetector(
                         onTap: () {
-                          // Action lors du clic sur un service
+                          
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -249,38 +277,6 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-
-                // Bouton "Voir tout"
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SearchPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize
-                        .min, // Adapte la taille pour s'ajuster au contenu
-                    children: [
-                      const Icon(Icons.list,
-                          color: Colors.white), // Icône ajoutée
-                      const SizedBox(
-                          width: 8.0), // Espace entre l'icône et le texte
-                      const Text(
-                        "Voir tout",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -301,7 +297,7 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.9, // Occupe presque tout l'écran
+          heightFactor: 0.9,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -333,7 +329,7 @@ class _HomePageState extends State<HomePage> {
                         leading: Icon(service.icon, color: Colors.orange),
                         title: Text(service.name),
                         onTap: () {
-                          // Action lors de la sélection d'un service
+                          
                         },
                       );
                     },
@@ -361,13 +357,13 @@ class _HomePageState extends State<HomePage> {
       body: Stack(
       children: [
         GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: CameraPosition(
-            target: _initialPosition,
-            zoom: 13,
-          ),
-          markers: _markers,
+        onMapCreated: _onMapCreated,
+        initialCameraPosition: CameraPosition(
+          target: _initialPosition,
+          zoom: 16,
         ),
+        markers: _markers,
+      ),
         Positioned(
           bottom: 80.0, 
           left: 16.0, 
@@ -392,7 +388,7 @@ class _HomePageState extends State<HomePage> {
             heroTag: "addServiceButton",
             backgroundColor: Colors.orange,
             onPressed: _showServiceBottomSheet, 
-            child: const Icon(Icons.car_repair), 
+            child: const Icon(Icons.favorite), 
           ),
         ),
       ],

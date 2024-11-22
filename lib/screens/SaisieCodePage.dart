@@ -96,7 +96,6 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
               ),
               itemCount: 12,
               itemBuilder: (context, index) {
-                // Définir les boutons de 1 à 9 et les boutons 0, "effacer", et "envoyer"
                 String buttonText = '';
                 if (index < 9) {
                   buttonText = (index + 1).toString();
@@ -111,7 +110,6 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
                 return ElevatedButton(
                   onPressed: () {
                     if (buttonText == 'Effacer') {
-                      // Effacer le dernier caractère
                       for (int i = 3; i >= 0; i--) {
                         if (_controllers[i].text.isNotEmpty) {
                           _controllers[i].clear();
@@ -119,7 +117,6 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
                         }
                       }
                     } else if (buttonText == 'Envoyer') {
-                      // _verifierCode();
                       Navigator.push(
                         context,
                         MaterialPageRoute(

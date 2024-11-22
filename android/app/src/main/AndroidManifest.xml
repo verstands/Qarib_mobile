@@ -1,14 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
     <application
         android:label="Qarib"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
-        
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,6 +34,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCl1_Hz7E2DW7NFq919ZnMPWekUpIOMNSY"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
