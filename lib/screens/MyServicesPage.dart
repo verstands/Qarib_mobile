@@ -83,12 +83,11 @@ class _MyServicesPageState extends State<MyServicesPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ServicePageCocher(), 
-      ),
-    );
-                
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ServicePageCocher(),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,

@@ -16,14 +16,7 @@ Future<ApiResponse<Map<String, dynamic>>> SignInService(
 
     switch (response.statusCode) {
       case 201:
-        final responseData = jsonDecode(response.body);
-        apiResponse.data = {
-          'token': responseData['access_token'],
-          'agent_id': responseData['agent']['id'],
-          'agent_noms': responseData['agent']['nom'],
-          'agent_telephone': responseData['agent']['telephone'],
-          'agent_email': responseData['agent']['email'],
-        };
+          apiResponse.data = jsonDecode(response.body);
         break;
       case 400:
         final errors = jsonDecode(response.body)['message'];

@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:emol/screens/DriverModePage.dart';
 import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/ProfilePage.dart';
 import 'package:emol/screens/SettingPage.dart';
+import 'package:flutter/material.dart';
 
 class MenuUtils extends StatefulWidget {
   const MenuUtils({super.key});
@@ -13,49 +11,15 @@ class MenuUtils extends StatefulWidget {
 }
 
 class _MenuUtilsState extends State<MenuUtils> {
-  int _currentIndex = 0;
-  late String userRole;  // Variable pour stocker le rôle de l'utilisateur
+  int _currentIndex = 0; 
 
-  // Listes de titres et d'écrans de navigation
-  List<String> _titles = [];
-  List<Widget> _screens = [];
+  final List<String> _titles = ["Accueil", "Profil", "Paramètres"];
 
-  // Fonction pour récupérer le rôle de l'utilisateur depuis SharedPreferences
-  Future<void> _getUserRole() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String role = prefs.getString('role') ?? 'user'; // Récupère le rôle (par défaut 'user')
-    setState(() {
-      userRole = role;
-      _initializeMenu(role);
-    });
-  }
-
-  // Initialiser les éléments de menu en fonction du rôle de l'utilisateur
-  void _initializeMenu(String role) {
-    if (role == 'prestateur') {
-      _titles = ["Accueil", "Profil", "Paramètres", "Prestateur"];
-      _screens = [
-        const HomeScreen(),
-        const ProfileScreen(),
-        const SettingsScreen(),
-        const DriverModeScreen(),
-      ];
-    } else {
-      _titles = ["Accueil", "Profil", "Paramètres"];
-      _screens = [
-        const HomeScreen(),
-        const ProfileScreen(),
-        const SettingsScreen(),
-      ];
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getUserRole(); // Récupérer le rôle au démarrage de la page
-  }
-
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const ProfileScreen(),
+    const SettingsScreen(),
+  ];
 
   void _onTabTapped(int index) {
     setState(() {
@@ -67,28 +31,27 @@ class _MenuUtilsState extends State<MenuUtils> {
   Widget build(BuildContext context) {
     return Scaffold(
       
-      body: _screens.isNotEmpty ? _screens[_currentIndex] : const Center(child: CircularProgressIndicator()),
-      bottomNavigationBar: _titles.isNotEmpty 
-          ? BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: _onTabTapped,
-              selectedItemColor: Colors.orange,
-              unselectedItemColor: Colors.grey,
-              items: _titles.map((title) {
-                int index = _titles.indexOf(title);
-                return BottomNavigationBarItem(
-                  icon: Icon(index == 0
-                      ? Icons.home
-                      : index == 1
-                          ? Icons.person
-                          : index == 2
-                              ? Icons.settings
-                              : Icons.directions_car), // Icône spécifique pour Prestateur
-                  label: title,
-                );
-              }).toList(),
-            )
-          : null, // Affiche BottomNavigationBar une fois que les titres sont chargés
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        selectedItemColor: Colors.orange,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Accueil",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profil",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: "Paramètres",
+          ),
+        ],
+      ),
     );
   }
 }
@@ -125,18 +88,6 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: SettingPage(),
-    );
-  }
-}
-
-// Écran du mode conducteur
-class DriverModeScreen extends StatelessWidget {
-  const DriverModeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: DriverModePage(),
     );
   }
 }

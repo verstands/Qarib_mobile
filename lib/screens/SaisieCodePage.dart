@@ -1,6 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:emol/screens/RoleSelectionPage.dart';
-import 'package:emol/screens/ServicePga.dart';
-import 'package:emol/screens/UploadPhotoPage.dart';
 import 'package:flutter/material.dart';
 
 class SaisieCodePage extends StatefulWidget {
@@ -23,29 +22,35 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
   }
 
   // Fonction pour vérifier le code saisi
-  void _verifierCode() {
-    String code = _controllers.map((controller) => controller.text).join();
-    if (code.length == 4) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Code vérifié : $code')));
-      // Logique de vérification du code
-      // Par exemple, rediriger l'utilisateur vers la page suivante si le code est correct.
-      // Navigator.pushNamed(context, '/pageSuivante');
+  void _verifierCode() async {
+    String codeSaisi = _controllers.map((controller) => controller.text).join();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? codeStocke = prefs.getString('code'); // Récupération du code stocké
+
+    if (codeSaisi == codeStocke) {
+      // Code correct, redirection
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const RoleSelectionPage(),
+        ),
+      );
     } else {
+      // Code incorrect
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Veuillez entrer un code à 4 chiffres')));
+        SnackBar(content: Text('Code incorrect, veuillez réessayer.')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Récupérer l'argument passé (le rôle)
     final role = ModalRoute.of(context)?.settings.arguments as String?;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orangeAccent,
-        title: Text("Saisie du code pour $role"),
+        title: Text("Saisie du code", style: TextStyle(fontWeight: FontWeight.bold, color:  Colors.white),),
         centerTitle: true,
       ),
       body: Padding(
@@ -63,8 +68,6 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
-
-            // Affichage des 4 champs de saisie
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(4, (index) {
@@ -85,68 +88,21 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
               }),
             ),
             const SizedBox(height: 40),
+            SizedBox(
+  width: double.infinity, // Prend toute la largeur
+  child: ElevatedButton(
+    onPressed: _verifierCode, // Lancer la vérification
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orangeAccent,
+      padding: const EdgeInsets.all(16), // Augmenter la hauteur
+    ),
+    child: const Text(
+      'Vérifier',
+      style: TextStyle(fontSize: 16, color: Colors.white),
+    ),
+  ),
+),
 
-            // Affichage des boutons numériques (1-9 et 0)
-            GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                String buttonText = '';
-                if (index < 9) {
-                  buttonText = (index + 1).toString();
-                } else if (index == 9) {
-                  buttonText = '0';
-                } else if (index == 10) {
-                  buttonText = 'Effacer';
-                } else {
-                  buttonText = 'Envoyer';
-                }
-
-                return ElevatedButton(
-                  onPressed: () {
-                    if (buttonText == 'Effacer') {
-                      for (int i = 3; i >= 0; i--) {
-                        if (_controllers[i].text.isNotEmpty) {
-                          _controllers[i].clear();
-                          break;
-                        }
-                      }
-                    } else if (buttonText == 'Envoyer') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RoleSelectionPage(),
-                        ),
-                      );
-                    } else {
-                      // Ajouter le chiffre au champ de saisie
-                      for (int i = 0; i < 4; i++) {
-                        if (_controllers[i].text.isEmpty) {
-                          _controllers[i].text = buttonText;
-                          break;
-                        }
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
-                    padding: const EdgeInsets.all(8), // Réduction du padding
-                    minimumSize: Size(40, 40), // Taille réduite des boutons
-                  ),
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.white), // Réduction de la taille du texte
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),

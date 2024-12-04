@@ -1,9 +1,16 @@
 import 'package:emol/Translate/TranslatePage.dart';
+import 'package:emol/models/OtpModel.dart';
+import 'package:emol/models/VilleModel.dart';
+import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/RoleSelectionPage.dart';
 import 'package:emol/screens/SaisieCodePage.dart';
+import 'package:emol/services/CodeOtpService.dart';
+import 'package:emol/services/UserService.dart';
+import 'package:emol/services/VilleService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -30,10 +37,29 @@ class _SignUpPageState extends State<SignUpPage> {
     'Fes',
     'Marrakech'
   ];
+  List<VilleModel> cities = [];
+
+  Future<void> _fetchVille() async {
+    EasyLoading.show(status: 'Chargement des villes...');
+    ApiResponse response = await getVilleAllService();
+    if (response.erreur == null) {
+      setState(() {
+        cities = response.data as List<VilleModel>;
+      });
+      print(cities);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${response.erreur}')),
+      );
+    }
+    EasyLoading.dismiss();
+  }
 
   final _formKey = GlobalKey<FormState>();
   bool _acceptTerms = false; // État de la checkbox
-   String _languageCode = "";
+  String _languageCode = "";
+  String codeotp = "";
+  bool _isLoading = false;
 
   Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -43,10 +69,11 @@ class _SignUpPageState extends State<SignUpPage> {
     print(_languageCode);
   }
 
-   @override
+  @override
   void initState() {
     super.initState();
-     _loadLanguage();
+    _loadLanguage();
+    _fetchVille();
   }
 
   @override
@@ -86,8 +113,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 const SizedBox(height: 20.0),
 
                 // Titre
-                 Text(
-                   Translations.get('Créer_un_compte', _languageCode),
+                Text(
+                  Translations.get('Créer_un_compte', _languageCode),
                   style: TextStyle(
                     fontSize: 24,
                     color: Colors.white,
@@ -96,8 +123,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 10.0),
 
-                 Text(
-                  Translations.get('Rejoignez_nous_de_maintenant', _languageCode),
+                Text(
+                  Translations.get(
+                      'Rejoignez_nous_de_maintenant', _languageCode),
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const SizedBox(height: 40.0),
@@ -123,7 +151,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_nom_complet', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_nom_complet', _languageCode);
                     }
                     return null;
                   },
@@ -138,7 +167,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     fillColor: Colors.white,
                     prefixIcon:
                         const Icon(Icons.phone_outlined, color: Colors.orange),
-                    labelText: Translations.get('Numero_de_telephone', _languageCode),
+                    labelText:
+                        Translations.get('Numero_de_telephone', _languageCode),
                     labelStyle: const TextStyle(color: Colors.orange),
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.orange),
@@ -150,9 +180,13 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_numéro_de_telephone', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_numéro_de_telephone',
+                          _languageCode);
                     } else if (!RegExp(r'^\+?\d{10,15}$').hasMatch(value)) {
-                      return Translations.get('Veuillez_entrer_un_numéro_de_telephone_valide', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_un_numéro_de_telephone_valide',
+                          _languageCode);
                     }
                     return null;
                   },
@@ -165,10 +199,10 @@ class _SignUpPageState extends State<SignUpPage> {
                       _selectedCity = value!;
                     });
                   },
-                  items: _cities.map((city) {
+                  items: cities.map((city) {
                     return DropdownMenuItem(
-                      value: city,
-                      child: Text(city),
+                      value: city.id,
+                      child: Text(city.nom ?? ''),
                     );
                   }).toList(),
                   decoration: InputDecoration(
@@ -188,7 +222,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_sélectionner_une_ville', _languageCode);
+                      return Translations.get(
+                          'Veuillez_sélectionner_une_ville', _languageCode);
                     }
                     return null;
                   },
@@ -217,10 +252,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_email', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_email', _languageCode);
                     } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                         .hasMatch(value)) {
-                      return Translations.get('Veuillez_entrer_un_email_valide', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_un_email_valide', _languageCode);
                     }
                     return null;
                   },
@@ -248,9 +285,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_entrer_votre_mot_de_passe', _languageCode);
+                      return Translations.get(
+                          'Veuillez_entrer_votre_mot_de_passe', _languageCode);
                     } else if (value.length < 6) {
-                      return Translations.get('Le_mot_de_passe_doit_contenir_au_moins_6_caractères', _languageCode);
+                      return Translations.get(
+                          'Le_mot_de_passe_doit_contenir_au_moins_6_caractères',
+                          _languageCode);
                     }
                     return null;
                   },
@@ -266,7 +306,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     fillColor: Colors.white,
                     prefixIcon: const Icon(Icons.lock_reset_outlined,
                         color: Colors.orange),
-                    labelText: Translations.get('Confirmer_le_mot_de_passe', _languageCode),
+                    labelText: Translations.get(
+                        'Confirmer_le_mot_de_passe', _languageCode),
                     labelStyle: const TextStyle(color: Colors.orange),
                     focusedBorder: OutlineInputBorder(
                       borderSide: const BorderSide(color: Colors.orange),
@@ -278,9 +319,13 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return Translations.get('Veuillez_confirmer_votre_mot_de_passe', _languageCode);
+                      return Translations.get(
+                          'Veuillez_confirmer_votre_mot_de_passe',
+                          _languageCode);
                     } else if (value != _passwordController.text) {
-                      return Translations.get('Les_mots_de_passe_ne_correspondent_pas', _languageCode);
+                      return Translations.get(
+                          'Les_mots_de_passe_ne_correspondent_pas',
+                          _languageCode);
                     }
                     return null;
                   },
@@ -301,7 +346,8 @@ class _SignUpPageState extends State<SignUpPage> {
                       style: const TextStyle(color: Colors.white),
                       children: [
                         TextSpan(
-                          text: Translations.get('conditions_dutilisation', _languageCode),
+                          text: Translations.get(
+                              'conditions_dutilisation', _languageCode),
                           style: const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold,
@@ -310,14 +356,18 @@ class _SignUpPageState extends State<SignUpPage> {
                             ..onTap = () {
                               _showPrivacyDialog(
                                 context,
-                                Translations.get('conditions_dutilisation', _languageCode),
-                                Translations.get('Voici_le_texte_des_conditions_d_utilisation', _languageCode),
+                                Translations.get(
+                                    'conditions_dutilisation', _languageCode),
+                                Translations.get(
+                                    'Voici_le_texte_des_conditions_d_utilisation',
+                                    _languageCode),
                               );
                             },
                         ),
                         const TextSpan(text: " et la "),
                         TextSpan(
-                          text: Translations.get('politiquedeconfidentialite', _languageCode),
+                          text: Translations.get(
+                              'politiquedeconfidentialite', _languageCode),
                           style: const TextStyle(
                             decoration: TextDecoration.underline,
                             fontWeight: FontWeight.bold,
@@ -340,31 +390,88 @@ class _SignUpPageState extends State<SignUpPage> {
 
                 // Bouton d'inscription
                 SizedBox(
-                  width: double.infinity, // Prend toute la largeur disponible
-                  child: ElevatedButton(
-                    onPressed: _acceptTerms
-                        ? () {
-                            if (_formKey.currentState!.validate()) {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                    builder: (context) => SaisieCodePage()),
-                                (route) => false,
-                              );
-                            }
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                    ),
-                    child:  Text(
-                      Translations.get('sinscrire', _languageCode),
-                      style: TextStyle(fontSize: 16, color: Colors.orange),
-                    ),
-                  ),
+                  width: double.infinity,
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : ElevatedButton(
+                          onPressed: _acceptTerms
+                              ? () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                  
+                                    ApiResponse responseVerifi =
+                                        await VerifyCompteService(
+                                            '_emailController.text',
+                                            '_nameController.text',
+                                            '_passwordController.text',
+                                            '_phoneController.text',
+                                            '_selectedCity!');
+                                    print('oooooooooooooooooo ${responseVerifi}');
+                                    if (responseVerifi.erreur == null) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                      // ApiResponse response =
+                                      //     await CodeOtpmailService(
+                                      //         _emailController.text,
+                                      //         _nameController.text);
+
+                                      // if (response.erreur == null) {
+                                      //   setState(() {
+                                      //     _isLoading = false;
+                                      //   });
+
+                                      //   final otp = response.data as otpModel;
+                                      //   print('Code OTP reçu : ${otp.code}');
+
+                                      //   SharedPreferences prefs =
+                                      //       await SharedPreferences
+                                      //           .getInstance();
+                                      //   codeotp = otp.code ?? '';
+                                      //   await prefs.setString('code', codeotp);
+
+                                      //   print('Code OTP enregistré : $codeotp');
+
+                                      //   // Redirection après succès
+                                      //   Navigator.of(context)
+                                      //       .pushAndRemoveUntil(
+                                      //     MaterialPageRoute(
+                                      //         builder: (context) =>
+                                      //             SaisieCodePage()),
+                                      //     (route) => false,
+                                      //   );
+                                      // } else {
+                                      //   EasyLoading.showError(response.erreur ??
+                                      //       "Erreur inconnue");
+                                      // }
+                                    } else {
+                                      EasyLoading.showError(
+                                          responseVerifi.erreur ??
+                                              "Erreur inconnue");
+                                              setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          child: Text(
+                            Translations.get('sinscrire', _languageCode),
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.orange),
+                          ),
+                        ),
                 ),
 
                 const SizedBox(height: 16.0),
@@ -372,7 +479,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 OutlinedButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.g_mobiledata, color: Colors.white),
-                  label:  Text(
+                  label: Text(
                     Translations.get('Continuer_avec_Google', _languageCode),
                     style: TextStyle(color: Colors.white),
                   ),
@@ -389,7 +496,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     // Action à exécuter lors du clic
                   },
                   icon: const Icon(Icons.apple, color: Colors.white), //
-                  label:  Text(
+                  label: Text(
                     Translations.get('Continuer_avec_Apple', _languageCode),
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
@@ -411,7 +518,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         MaterialPageRoute(builder: (context) => LoginPage()),
                         (route) => false);
                   },
-                  child:  Text(
+                  child: Text(
                     Translations.get('DéjàuncompteSeconnecter', _languageCode),
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),

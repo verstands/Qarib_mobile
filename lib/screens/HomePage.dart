@@ -1,5 +1,17 @@
+import 'dart:typed_data';
+import 'dart:ui';
+
+import 'package:emol/constant.dart';
+import 'package:emol/models/ServiceByUserModel.dart';
+import 'package:emol/models/api_response.dart';
+import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/SearchPage.dart';
+import 'package:emol/screens/page2.dart';
+import 'package:emol/services/ServiceService.dart';
+import 'package:emol/sockets/socket_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,82 +24,72 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late GoogleMapController mapController;
   final LatLng _initialPosition = const LatLng(48.8566, 2.3522);
-  final List<Service> _services = [
-    Service(
-      name: "Plombier",
-      position: const LatLng(48.8566, 2.3522),
-      icon: Icons.build,
-    ),
-    Service(
-      name: "Electricien",
-      position: const LatLng(48.8666, 2.3333),
-      icon: Icons.local_shipping,
-    ),
-    Service(
-      name: "Jardinier",
-      position: const LatLng(48.8766, 2.3422),
-      icon: Icons.cleaning_services,
-    ),
-    Service(
-      name: "Disinsection service",
-      position: const LatLng(48.8866, 2.3522),
-      icon: Icons.local_hospital,
-    ),
-    Service(
-      name: "Peintre",
-      position: const LatLng(
-          48.8576, 2.3622),
-      icon: Icons.brush,
-    ),
-    Service(
-      name: "Maçon",
-      position: const LatLng(
-          48.8676, 2.3733),
-      icon: Icons.construction,
-    ),
-    Service(
-      name: "Menuisier",
-      position: const LatLng(
-          48.8776, 2.3844), 
-      icon: Icons.chair,
-    ),
-    Service(
-      name: "Couturier",
-      position: const LatLng(48.8876,
-          2.3955),
-      icon: Icons.dry_cleaning,
-    ),
-    Service(
-      name: "Avocat",
-      position: const LatLng(
-          48.8976, 2.4066),
-      icon: Icons.account_balance,
-    ),
-    Service(
-      name: "Cameraman",
-      position: const LatLng(
-          48.9076, 2.4177), 
-      icon: Icons.videocam,
-    ),
-  ];
-
+  List<ServiceByUserModel> _services = [];
   final TextEditingController _serviceNameController = TextEditingController();
+  final SocketService _socketService = SocketService();
+  List<Map<String, dynamic>> userPositions = []; // Stocke les positions
 
-   Set<Marker> get _markers {
-    return _services.map((service) {
-      return Marker(
-        markerId: MarkerId(service.name),
-        position: service.position,
-        infoWindow: InfoWindow(title: service.name),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+  Set<Marker> _markers = {};
+
+  Future<void> _fetchService() async {
+    ApiResponse response = await getServiceByUserAll();
+    if (response.erreur == null) {
+      setState(() {
+        _services = response.data as List<ServiceByUserModel>;
+      });
+    } else if (response.erreur == unauthorized) {
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${response.erreur}')),
       );
-    }).toSet();
+    }
   }
 
- @override
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _moveCameraToFitServices());
+    _socketService.initializeSocket();
+    _socketService.socket.on('userPositionUpdate', (data) {
+      setState(() {
+        userPositions.add({
+          'userId': data['userId'],
+          'latitude': data['latitude'],
+          'longitude': data['longitude'],
+        });
+      });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _moveCameraToFitServices();
+      _showCurrentLocation();
+      _addServiceMarkers(); // Ajouter les marqueurs avec icônes
+      _startListeningToPosition(); // Commencer à écouter la position
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketService.disconnectSocket();
+    super.dispose();
+  }
+
+  Future<void> _addServiceMarkers() async {
+    Set<Marker> newMarkers = {};
+    for (var service in _services) {
+      final icon = await _getMarkerIcon(
+          Colors.orange); // Icône personnalisée avec couleur orange
+      newMarkers.add(Marker(
+        markerId: MarkerId(service.id ?? ""),
+        infoWindow: InfoWindow(title: service.user?.noms),
+        icon:
+            BitmapDescriptor.fromBytes(icon), // Utilisation de l'icône générée
+      ));
+    }
+    setState(() {
+      _markers = newMarkers;
+    });
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -96,36 +98,134 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _moveCameraToFitServices() {
-    if (_services.isEmpty) return;
+    if (_markers.isEmpty) return;
 
-    LatLngBounds bounds = _services.fold(
+    LatLngBounds bounds = _markers.fold(
       LatLngBounds(
-        southwest: _services.first.position,
-        northeast: _services.first.position,
+        southwest: _markers.first.position,
+        northeast: _markers.first.position,
       ),
-      (LatLngBounds current, Service service) {
+      (LatLngBounds current, Marker marker) {
         return LatLngBounds(
           southwest: LatLng(
-            current.southwest.latitude < service.position.latitude
+            current.southwest.latitude < marker.position.latitude
                 ? current.southwest.latitude
-                : service.position.latitude,
-            current.southwest.longitude < service.position.longitude
+                : marker.position.latitude,
+            current.southwest.longitude < marker.position.longitude
                 ? current.southwest.longitude
-                : service.position.longitude,
+                : marker.position.longitude,
           ),
           northeast: LatLng(
-            current.northeast.latitude > service.position.latitude
+            current.northeast.latitude > marker.position.latitude
                 ? current.northeast.latitude
-                : service.position.latitude,
-            current.northeast.longitude > service.position.longitude
+                : marker.position.latitude,
+            current.northeast.longitude > marker.position.longitude
                 ? current.northeast.longitude
-                : service.position.longitude,
+                : marker.position.longitude,
           ),
         );
       },
     );
 
-    mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    setState(() {
+      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    });
+  }
+
+  Future<Uint8List> _getMarkerIcon(Color color) async {
+    final Icon icon =
+        Icon(Icons.circle, color: color, size: 40.0); // Icône ronde
+    final RenderRepaintBoundary boundary = RenderRepaintBoundary();
+    final repaintWidget = RepaintBoundary(
+      child: Icon(icon.icon, color: color, size: 40.0),
+    );
+
+    boundary.paint(context as PaintingContext, Offset.zero);
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
+
+  void _startListeningToPosition() {
+    Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 16,
+      ),
+    ).listen((Position position) {
+      LatLng newPosition = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _markers.removeWhere(
+            (marker) => marker.markerId.value == "current_location");
+        _markers.add(Marker(
+          markerId: const MarkerId("current_location"),
+          position: newPosition,
+          infoWindow: const InfoWindow(title: "Ma position actuelle"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ));
+      });
+
+      // Centrer la carte sur la nouvelle position
+      mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(newPosition, 16),
+      );
+    });
+  }
+
+  Future<void> _showCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Vérifier si le service de localisation est activé
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Activez les services de localisation.')),
+      );
+      return;
+    }
+
+    // Vérifier les permissions
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permission de localisation refusée.')),
+        );
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permission de localisation bloquée.')),
+      );
+      return;
+    }
+
+    // Obtenir la position actuelle
+    Position position = await Geolocator.getCurrentPosition();
+    LatLng currentPosition = LatLng(position.latitude, position.longitude);
+
+    // Centrer la carte sur la position actuelle
+    mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(currentPosition, 16),
+    );
+
+    // Ajouter un marqueur pour la position actuelle
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: const MarkerId("current_location"),
+          position: currentPosition,
+          infoWindow: const InfoWindow(title: "Ma position actuelle"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueBlue), // Icône bleue prédéfinie
+        ),
+      );
+    });
   }
 
   void _showSearchBottomSheet() {
@@ -140,7 +240,7 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.5, 
+          heightFactor: 0.5,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
             child: Column(
@@ -155,8 +255,7 @@ class _HomePageState extends State<HomePage> {
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
-                      onPressed: () =>
-                          Navigator.pop(context),
+                      onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close, color: Colors.grey),
                     ),
                   ],
@@ -168,11 +267,12 @@ class _HomePageState extends State<HomePage> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                    ),
                   ),
-                  onChanged: (value) {
-              
-                  },
+                  onChanged: (value) {},
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -183,99 +283,6 @@ class _HomePageState extends State<HomePage> {
                     backgroundColor: Colors.orange,
                   ),
                   child: const Text("Rechercher"),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showServiceBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white.withOpacity(0.9),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-      ),
-      builder: (context) {
-        return FractionallySizedBox(
-          heightFactor:
-              0.7,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Services disponibles",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8.0),
-                Expanded(
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3, 
-                      crossAxisSpacing: 8.0,
-                      mainAxisSpacing: 8.0,
-                    ),
-                    itemCount: _services.length,
-                    itemBuilder: (context, index) {
-                      final service = _services[index];
-                      return GestureDetector(
-                        onTap: () {
-                          
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 5,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(service.icon,
-                                  size: 40.0, color: Colors.orange),
-                              const SizedBox(height: 8.0),
-                              Text(
-                                service.name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -326,11 +333,8 @@ class _HomePageState extends State<HomePage> {
                     itemBuilder: (context, index) {
                       final service = _services[index];
                       return ListTile(
-                        leading: Icon(service.icon, color: Colors.orange),
-                        title: Text(service.name),
-                        onTap: () {
-                          
-                        },
+                        title: Text(service.id ?? ""),
+                        onTap: () {},
                       );
                     },
                   ),
@@ -350,61 +354,72 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.orange,
         title: const Text(
           "Kinshasa",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
       ),
       body: Stack(
-      children: [
-        GoogleMap(
-        onMapCreated: _onMapCreated,
-        initialCameraPosition: CameraPosition(
-          target: _initialPosition,
-          zoom: 16,
-        ),
-        markers: _markers,
-      ),
-        Positioned(
-          bottom: 80.0, 
-          left: 16.0, 
-          child: FloatingActionButton(
-            heroTag: "searchButton",
-            backgroundColor: Colors.orange,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SearchPage(),
+        children: [
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: CameraPosition(
+              target: _initialPosition,
+              zoom: 16,
+            ),
+            markers: _markers,
+          ),
+          Positioned(
+            bottom: 16.0,
+            left: 16.0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FloatingActionButton(
+                  heroTag: "searchButton",
+                  backgroundColor: Colors.orange,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchPage(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.search, color: Colors.white,),
                 ),
-              );
-            },
-            child: const Icon(Icons.search), 
+                const SizedBox(height: 16.0),
+                FloatingActionButton(
+                  heroTag: "addServiceButton",
+                  backgroundColor: Colors.orange,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  MapWithWebSocket(),
+                      ),
+                    );
+                  },
+                  child: const Icon(
+                    Icons.favorite,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                FloatingActionButton(
+                  heroTag: "currentLocationButton",
+                  backgroundColor: Colors.orange,
+                  onPressed: _showCurrentLocation,
+                  child: const Icon(
+                    Icons.my_location,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Positioned(
-          bottom: 16.0, 
-          left: 16.0, 
-          child: FloatingActionButton(
-            heroTag: "addServiceButton",
-            backgroundColor: Colors.orange,
-            onPressed: _showServiceBottomSheet, 
-            child: const Icon(Icons.favorite), 
-          ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
   }
-}
-
-class Service {
-  final String name;
-  final LatLng position;
-  final IconData icon;
-
-  Service({
-    required this.name,
-    required this.position,
-    required this.icon,
-  });
 }

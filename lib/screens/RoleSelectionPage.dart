@@ -36,9 +36,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 fontWeight: FontWeight.bold,
                 color: Colors.orangeAccent,
               ),
-              textAlign: TextAlign.center, // Assure que le texte est centré horizontalement
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
 
             ElevatedButton(
               onPressed: () async {
@@ -54,7 +54,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,
                 padding: const EdgeInsets.symmetric(horizontal: 55, vertical: 40),
-                shape: const CircleBorder(), // Utiliser un CircleBorder pour un bouton rond
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20), // Coins légèrement arrondis
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +90,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent,
                 padding: const EdgeInsets.symmetric(horizontal: 55, vertical: 40),
-                shape: const CircleBorder(), // Utiliser un CircleBorder pour un bouton rond
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20), // Coins légèrement arrondis
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

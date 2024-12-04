@@ -47,18 +47,19 @@ class _LoginPageState extends State<LoginPage> {
         if (response.erreur == null && response.data != null) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
 
-          String token = response.data!['token'] ?? '';
-          String id = response.data!['id'] ?? '';
-          String nom = response.data!['noms'] ?? '';
-          String telephone = response.data!['telephone'] ?? '';
-          String email = response.data!['email'] ?? '';
+          String token = response.data!['access_token'] ?? '';
+          Map<String, dynamic> agentData = response.data!['agent'] ?? {};
+          String id = agentData['id'] ?? '';
+          String nom = agentData['noms'] ?? '';
+          String telephone = agentData['telephone'] ?? '';
+          String email = agentData['email'] ?? '';
 
+         
           await prefs.setString('token', token);
           await prefs.setString('agent_id', id);
           await prefs.setString('agent_nom', nom);
           await prefs.setString('agent_telephone', telephone);
           await prefs.setString('agent_email', email);
-
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => MenuUtils()),
               (route) => false);
