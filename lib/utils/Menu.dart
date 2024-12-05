@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:emol/screens/DriverDashboardPage.dart';
 import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/ProfilePage.dart';
 import 'package:emol/screens/SettingPage.dart';
-import 'package:flutter/material.dart';
 
 class MenuUtils extends StatefulWidget {
   const MenuUtils({super.key});
@@ -11,12 +14,30 @@ class MenuUtils extends StatefulWidget {
 }
 
 class _MenuUtilsState extends State<MenuUtils> {
-  int _currentIndex = 0; 
+  int _currentIndex = 0;
+  String? role;
 
-  final List<String> _titles = ["Accueil", "Profil", "Paramètres"];
+  @override
+  void initState() {
+    super.initState();
+    _getRole();
+  }
 
-  final List<Widget> _screens = [
+  Future<void> _getRole() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      role = prefs.getString('agent_role');
+    });
+  }
+
+  final List<Widget> _screensUser = [
     const HomeScreen(),
+    const ProfileScreen(),
+    const SettingsScreen(),
+  ];
+
+  final List<Widget> _screensPrestataire = [
+    const PrestataireScreen(),
     const ProfileScreen(),
     const SettingsScreen(),
   ];
@@ -29,34 +50,50 @@ class _MenuUtilsState extends State<MenuUtils> {
 
   @override
   Widget build(BuildContext context) {
+    final screens = role == "user" ? _screensUser : _screensPrestataire;
+
     return Scaffold(
-      
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Accueil",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profil",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Paramètres",
-          ),
-        ],
+        items: role == "user"
+            ? const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: "Accueil",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: "Profil",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: "Paramètres",
+                ),
+              ]
+            : const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard),
+                  label: "Dashboard",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: "Profil",
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: "Paramètres",
+                ),
+              ],
       ),
     );
   }
 }
 
-// Écran d'accueil
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -68,7 +105,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Écran du profil
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -80,7 +117,7 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// Écran des paramètres
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -88,6 +125,18 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: SettingPage(),
+    );
+  }
+}
+
+
+class PrestataireScreen extends StatelessWidget {
+  const PrestataireScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: ProviderDashboardPage(),
     );
   }
 }

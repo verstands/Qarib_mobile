@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,7 +28,15 @@ class _HomePageState extends State<HomePage> {
   List<ServiceByUserModel> _services = [];
   final TextEditingController _serviceNameController = TextEditingController();
   final SocketService _socketService = SocketService();
-  List<Map<String, dynamic>> userPositions = []; // Stocke les positions
+  List<Map<String, dynamic>> userPositions = [];
+  String ville = '';
+
+  Future<void> getVille() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      ville = prefs.getString('agent_ville')!;
+    });
+  }
 
   Set<Marker> _markers = {};
 
@@ -51,6 +60,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    getVille();
     _socketService.initializeSocket();
     _socketService.socket.on('userPositionUpdate', (data) {
       setState(() {
@@ -352,8 +362,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text(
-          "Kinshasa",
+        title:  Text(
+          ville,
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,

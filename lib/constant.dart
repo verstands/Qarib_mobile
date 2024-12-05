@@ -7,6 +7,7 @@ const getAllServiceByUserAll = '$baseURL/service/servicebyuserAll/servicebyuserA
 const getSocket = 'http://185.182.186.58:4005';
 const getCodeOtpMail = '$baseURL/agent/otp';
 const posVerifyCompte = '$baseURL/agent/verification';
+const postsaveUser = '$baseURL/agent';
 const getVille = '$baseURL/ville';
 
 

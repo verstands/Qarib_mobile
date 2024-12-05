@@ -53,6 +53,8 @@ class _LoginPageState extends State<LoginPage> {
           String nom = agentData['noms'] ?? '';
           String telephone = agentData['telephone'] ?? '';
           String email = agentData['email'] ?? '';
+          String role = agentData['role']?['nom'] ?? '';
+          String ville = agentData['ville']?['nom'] ?? '';
 
          
           await prefs.setString('token', token);
@@ -60,6 +62,8 @@ class _LoginPageState extends State<LoginPage> {
           await prefs.setString('agent_nom', nom);
           await prefs.setString('agent_telephone', telephone);
           await prefs.setString('agent_email', email);
+          await prefs.setString('agent_role', role);
+          await prefs.setString('agent_ville', ville);
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => MenuUtils()),
               (route) => false);

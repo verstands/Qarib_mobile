@@ -393,7 +393,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   width: double.infinity,
                   child: _isLoading
                       ? Center(
-                          child: CircularProgressIndicator(),
+                          child: CircularProgressIndicator(
+                            color: Colors
+                                .orange,
+                          ),
                         )
                       : ElevatedButton(
                           onPressed: _acceptTerms
@@ -405,49 +408,59 @@ class _SignUpPageState extends State<SignUpPage> {
                                   
                                     ApiResponse responseVerifi =
                                         await VerifyCompteService(
-                                            '_emailController.text',
-                                            '_nameController.text',
-                                            '_passwordController.text',
-                                            '_phoneController.text',
-                                            '_selectedCity!');
-                                    print('oooooooooooooooooo ${responseVerifi}');
+                                            _emailController.text,
+                                            _nameController.text,
+                                            _passwordController.text,
+                                            _phoneController.text,
+                                            _selectedCity!);
+                                   
                                     if (responseVerifi.erreur == null) {
                                       setState(() {
                                         _isLoading = false;
                                       });
-                                      // ApiResponse response =
-                                      //     await CodeOtpmailService(
-                                      //         _emailController.text,
-                                      //         _nameController.text);
 
-                                      // if (response.erreur == null) {
-                                      //   setState(() {
-                                      //     _isLoading = false;
-                                      //   });
+                                      SharedPreferences prefs =
+                                            await SharedPreferences
+                                                .getInstance();
+                                        await prefs.setString('emailAgent',  _emailController.text);
+                                        await prefs.setString('nomsAgent',  _nameController.text);
+                                        await prefs.setString('passwordAgent',   _passwordController.text);
+                                        await prefs.setString('phoneAgent',  _phoneController.text);
+                                        await prefs.setString('citeAgent',  _selectedCity!);
 
-                                      //   final otp = response.data as otpModel;
-                                      //   print('Code OTP reçu : ${otp.code}');
+                                      ApiResponse response =
+                                          await CodeOtpmailService(
+                                              _emailController.text,
+                                              _nameController.text);
 
-                                      //   SharedPreferences prefs =
-                                      //       await SharedPreferences
-                                      //           .getInstance();
-                                      //   codeotp = otp.code ?? '';
-                                      //   await prefs.setString('code', codeotp);
+                                      if (response.erreur == null) {
+                                        setState(() {
+                                          _isLoading = false;
+                                        });
 
-                                      //   print('Code OTP enregistré : $codeotp');
+                                        final otp = response.data as otpModel;
+                                        print('Code OTP reçu : ${otp.code}');
 
-                                      //   // Redirection après succès
-                                      //   Navigator.of(context)
-                                      //       .pushAndRemoveUntil(
-                                      //     MaterialPageRoute(
-                                      //         builder: (context) =>
-                                      //             SaisieCodePage()),
-                                      //     (route) => false,
-                                      //   );
-                                      // } else {
-                                      //   EasyLoading.showError(response.erreur ??
-                                      //       "Erreur inconnue");
-                                      // }
+                                        SharedPreferences prefs =
+                                            await SharedPreferences
+                                                .getInstance();
+                                        codeotp = otp.code ?? '';
+                                        await prefs.setString('code', codeotp);
+
+                                        print('Code OTP enregistré : $codeotp');
+
+                                        // Redirection après succès
+                                        Navigator.of(context)
+                                            .pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  SaisieCodePage()),
+                                          (route) => false,
+                                        );
+                                      } else {
+                                        EasyLoading.showError(response.erreur ??
+                                            "Erreur inconnue");
+                                      }
                                     } else {
                                       EasyLoading.showError(
                                           responseVerifi.erreur ??
