@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:emol/constant.dart';
+import 'package:emol/models/CountServiceUserModel.dart';
 import 'package:emol/models/ServiceByUserModel.dart';
 import 'package:emol/models/Servicemodel.dart';
 import 'package:emol/models/api_response.dart';
@@ -57,6 +58,37 @@ Future<ApiResponse> getServiceByUserAll() async {
         break;
       case 422:
         final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+      case 401:
+        apiResponse.erreur = unauthorized;
+        break;
+      default:
+        apiResponse.erreur = somethingwentwrong;
+        break;
+    }
+  } catch (e) {
+    apiResponse.erreur = serverError;
+  }
+  return apiResponse;
+}
+
+
+Future<ApiResponse> countServiceUserService(String id) async {
+  ApiResponse apiResponse = ApiResponse();
+  try {
+    final response = await http.get(
+      Uri.parse('$countServiceUser/$id'),
+      headers: {
+        'Accept': 'application/json',
+      },
+    );
+    switch (response.statusCode) {
+      case 200:
+        apiResponse.data = CountServiceUserModel.fromJson(jsonDecode(response.body));
+        break;
+      case 422:
+        final errors = jsonDecode(response.body)['message'];
         apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
         break;
       case 401:

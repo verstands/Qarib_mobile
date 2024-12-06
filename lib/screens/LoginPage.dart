@@ -105,12 +105,12 @@ class _LoginPageState extends State<LoginPage> {
                     child: Image.asset(
                       'assets/logo/logo.jpeg',
                       fit: BoxFit.cover,
-                      width: 90, // Ajustez la taille si nécessaire
+                      width: 90,
                       height: 90,
                     ),
                   ),
                 ),
-
+              
                 const SizedBox(height: 20.0),
                 Text(
                   Translations.get('Bienvenue', _languageCode),

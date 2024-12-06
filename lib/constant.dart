@@ -9,6 +9,7 @@ const getCodeOtpMail = '$baseURL/agent/otp';
 const posVerifyCompte = '$baseURL/agent/verification';
 const postsaveUser = '$baseURL/agent';
 const getVille = '$baseURL/ville';
+const countServiceUser = '$baseURL/serviceuser/count';
 
 
 //messages response
