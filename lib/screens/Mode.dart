@@ -1,3 +1,4 @@
+import 'package:emol/utils/Menu.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,6 +31,9 @@ class _ModeSelectionPageState extends State<ModeSelectionPage> {
     setState(() {
       this.role = role;
     });
+   Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => MenuUtils()),
+              (route) => false);
   }
 
   @override
@@ -84,6 +88,7 @@ class _ModeSelectionPageState extends State<ModeSelectionPage> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white
                   ),
                 ),
               ),
