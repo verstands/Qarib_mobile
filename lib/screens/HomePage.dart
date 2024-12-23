@@ -299,7 +299,7 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.9,
+          heightFactor: 0.5,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -388,13 +388,13 @@ class _HomePageState extends State<HomePage> {
                   heroTag: "addServiceButton",
                   backgroundColor: Colors.orange,
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>  MapWithWebSocket(),
-                      ),
-                    );
-                    //_showAllServices();
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) =>  MapWithWebSocket(),
+                    //   ),
+                    // );
+                    _showAllServices();
                   },
                   child: const Icon(
                     Icons.favorite,
