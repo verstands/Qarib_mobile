@@ -519,15 +519,15 @@ class _HomePageState extends State<HomePage> {
                 FloatingActionButton(
                   heroTag: "addServiceButton",
                   backgroundColor: Colors.orange,
-                  onPressed: () {
+                  onPressed: () async {
                     // Navigator.push(
                     //   context,
                     //   MaterialPageRoute(
                     //     builder: (context) =>  MapWithWebSocket(),
                     //   ),
                     // );
+                    await getId();
                     _showAllServices();
-                    getId();
                   },
                   child: const Icon(
                     Icons.favorite,

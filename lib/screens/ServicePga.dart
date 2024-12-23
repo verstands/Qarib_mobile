@@ -64,18 +64,18 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
           await SaveUserServices(id ?? "", serviceId);
 
       if (response.erreur != null) {
-        print('Erreur lors de la sauvegarde : ${response.erreur}'); // Log d'erreur
+        print('Erreur lors de la sauvegarde : ${response.erreur}'); 
         EasyLoading.showError(
             "Erreur lors de la sauvegarde du service $serviceId: ${response.erreur}");
         return; // Arrêtez si une erreur se produit
       } else {
-        print('Service $serviceId sauvegardé avec succès.'); // Log de succès
+        print('Service $serviceId sauvegardé avec succès.'); 
       }
     }
 
     EasyLoading.showSuccess("Tous les services ont été sauvegardés.");
   } catch (e) {
-    print('Erreur inattendue : $e'); // Log d'exception
+    print('Erreur inattendue : $e'); 
     EasyLoading.showError("Erreur inattendue : $e");
   } finally {
     setState(() {

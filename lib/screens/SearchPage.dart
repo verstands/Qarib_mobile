@@ -2,11 +2,11 @@ import 'package:emol/constant.dart';
 import 'package:emol/models/Servicemodel.dart';
 import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/LoginPage.dart';
+import 'package:emol/services/FavoriService.dart';
 import 'package:emol/services/ServiceService.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/Icon_utils.dart';
-
-
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -18,6 +18,8 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   List<ServiceModel> services = [];
   bool loading = true;
+  Map<String, bool> loadingFavorieMap = {};
+  String? id;
   String searchQuery = '';
   final FocusNode _focusNode = FocusNode();
 
@@ -42,12 +44,42 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  
+  Future<void> getId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id = prefs.getString('agent_id');
+    });
+  }
+
+  void _AddFavorie(String idservice) async {
+    setState(() {
+      loadingFavorieMap[idservice] = true;
+    });
+
+    ApiResponse response = await postFavoriService(id!, idservice);
+
+    setState(() {
+      loadingFavorieMap[idservice] = false;
+    });
+
+    if (response.erreur == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Le service a été ajouté à vos favoris avec succès'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response.erreur ?? 'Erreur inconnue')),
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchService();
+    getId();
     _focusNode.requestFocus();
   }
 
@@ -125,7 +157,8 @@ class _SearchPageState extends State<SearchPage> {
                           leading: CircleAvatar(
                             backgroundColor: Colors.orange.shade100,
                             child: Icon(
-                              getIconFromString(service.icon ?? ''), // Récupère l'icône dynamique
+                              getIconFromString(service.icon ??
+                                  ''), // Récupère l'icône dynamique
                               color: Colors.orange,
                               size: 30,
                             ),
@@ -136,15 +169,21 @@ class _SearchPageState extends State<SearchPage> {
                           ),
                           subtitle:
                               Text(service.description ?? 'Pas de description'),
-                          trailing: IconButton(
-                            icon: Icon(
-                              Icons.favorite,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {});
-                            },
-                          ),
+                          trailing: loadingFavorieMap[service.id] == true
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(color: Colors.orange,),
+                                ) // Affiche un petit loader
+                              : IconButton(
+                                  icon: const Icon(
+                                    Icons.favorite,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    _AddFavorie(service.id ?? '');
+                                  },
+                                ),
                           onTap: () {
                             // Action lors du clic
                           },
