@@ -66,7 +66,14 @@ class Translations {
       'Signaler_un_problème': 'Signaler un problème',
       'sinscrire' : 'S\'inscrire',
       'DéjàuncompteSeconnecter' : 'Déjà un compte ? Se connecter',
-      'politiquedeconfidentialite' : 'politique de confidentialité'
+      'politiquedeconfidentialite' : 'politique de confidentialité',
+
+      'tableau_de_bord_du_prestataire' : 'Tableau de bord du prestataire',
+      'total_des_service' : 'Total des services',
+      'fonctionnalites_disponibles' : 'Fonctionnalites disponibles',
+      'voir_mes_services' : 'Voir mes services',
+      'notifications' : 'Notifications',
+
     },
     'en': {
       'Bienvenue': 'Welcome',

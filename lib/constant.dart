@@ -10,6 +10,9 @@ const posVerifyCompte = '$baseURL/agent/verification';
 const postsaveUser = '$baseURL/agent';
 const getVille = '$baseURL/ville';
 const countServiceUser = '$baseURL/serviceuser/count';
+const AllServiceByUser = '$baseURL/serviceuser/all';
+const postsaveUserService = '$baseURL/serviceuser';
+
 
 
 //messages response

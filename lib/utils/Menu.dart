@@ -1,3 +1,4 @@
+import 'package:emol/screens/Mode.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,12 +35,14 @@ class _MenuUtilsState extends State<MenuUtils> {
     const HomeScreen(),
     const ProfileScreen(),
     const SettingsScreen(),
+    const ModeScreen(),
   ];
 
   final List<Widget> _screensPrestataire = [
     const PrestataireScreen(),
     const ProfileScreen(),
     const SettingsScreen(),
+    const ModeScreen(),
   ];
 
   void _onTabTapped(int index) {
@@ -73,6 +76,10 @@ class _MenuUtilsState extends State<MenuUtils> {
                   icon: Icon(Icons.settings),
                   label: "Paramètres",
                 ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.swap_horiz),
+                  label: "Mode",
+                ),
               ]
             : const [
                 BottomNavigationBarItem(
@@ -87,12 +94,15 @@ class _MenuUtilsState extends State<MenuUtils> {
                   icon: Icon(Icons.settings),
                   label: "Paramètres",
                 ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.swap_horiz),
+                  label: "Mode",
+                ),
               ],
       ),
     );
   }
 }
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -105,7 +115,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -116,7 +125,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
-
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -129,7 +137,6 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-
 class PrestataireScreen extends StatelessWidget {
   const PrestataireScreen({super.key});
 
@@ -137,6 +144,17 @@ class PrestataireScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: ProviderDashboardPage(),
+    );
+  }
+}
+
+class ModeScreen extends StatelessWidget {
+  const ModeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: ModeSelectionPage(),
     );
   }
 }

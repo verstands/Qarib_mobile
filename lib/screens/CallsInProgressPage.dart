@@ -8,8 +8,7 @@ class CallsInProgressPage extends StatefulWidget {
 }
 
 class _CallsInProgressPageState extends State<CallsInProgressPage> {
-  // Liste des appels en cours avec un statut et une date pour chaque utilisateur
-  final List<Map<String, String>> ongoingCalls = [
+  final List<Map<String, String>> notifications = [
     {
       "name": "Rabby Kik",
       "phoneNumber": "24394567890",
@@ -22,54 +21,6 @@ class _CallsInProgressPageState extends State<CallsInProgressPage> {
       "status": "Refuser",
       "date": "2024-11-18 14:35"
     },
-    {
-      "name": "Alice Nzuzi",
-      "phoneNumber": "243825645678",
-      "status": "Appeler",
-      "date": "2024-11-18 14:40"
-    },
-    {
-      "name": "Jean Kamanda",
-      "phoneNumber": "243921345678",
-      "status": "Refuser",
-      "date": "2024-11-18 14:45"
-    },
-    {
-      "name": "Michel Badi",
-      "phoneNumber": "243930098765",
-      "status": "Appeler",
-      "date": "2024-11-18 14:50"
-    },
-    {
-      "name": "Clara Mabiala",
-      "phoneNumber": "243988765432",
-      "status": "Refuser",
-      "date": "2024-11-18 14:55"
-    },
-    {
-      "name": "Eric Tshikala",
-      "phoneNumber": "243923445678",
-      "status": "Appeler",
-      "date": "2024-11-18 15:00"
-    },
-    {
-      "name": "Emilie Lufungula",
-      "phoneNumber": "243945677890",
-      "status": "Refuser",
-      "date": "2024-11-18 15:05"
-    },
-    {
-      "name": "Moïse Kalenga",
-      "phoneNumber": "243980234567",
-      "status": "Appeler",
-      "date": "2024-11-18 15:10"
-    },
-    {
-      "name": "Sophie Lunda",
-      "phoneNumber": "243925678990",
-      "status": "Refuser",
-      "date": "2024-11-18 15:15"
-    },
   ];
 
   @override
@@ -78,113 +29,31 @@ class _CallsInProgressPageState extends State<CallsInProgressPage> {
       appBar: AppBar(
         backgroundColor: Colors.orangeAccent,
         title: const Text(
-          "Notification",
+          "Notifications",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         elevation: 10,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Titre
             const Text(
               "Appels en cours",
               style: TextStyle(
-                fontSize: 25,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.orangeAccent,
               ),
             ),
             const SizedBox(height: 20),
-
-            // Liste des appels
             Expanded(
               child: ListView.builder(
-                itemCount: ongoingCalls.length,
+                itemCount: notifications.length,
                 itemBuilder: (context, index) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 10.0),
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Affichage du nom et du numéro
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Nom de l'utilisateur
-                              Text(
-                                ongoingCalls[index]["name"]!,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Numéro de téléphone
-                              Text(
-                                ongoingCalls[index]["phoneNumber"]!,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Affichage de la date de l'appel
-                              Text(
-                                "Date: ${ongoingCalls[index]["date"] ?? 'Date non disponible'}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w300,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: ongoingCalls[index]
-                                              ["status"] ==
-                                          "Appeler"
-                                      ? Colors.green
-                                      : ongoingCalls[index]["status"] ==
-                                              "Refuser"
-                                          ? Colors.red
-                                          : Colors
-                                              .grey,
-                                ),
-                                onPressed: ongoingCalls[index]["status"] ==
-                                        "Appeler"
-                                    ? () => _acceptCall(index)
-                                    : ongoingCalls[index]["status"] == "Refuser"
-                                        ? () => _rejectCall(index)
-                                        : null, // Si l'appel a déjà été accepté ou refusé, désactiver le bouton
-                                child: Text(
-                                  ongoingCalls[index]["status"] == "Appeler"
-                                      ? "Accepter"
-                                      : ongoingCalls[index]["status"] ==
-                                              "Refuser"
-                                          ? "Refusé"
-                                          : "Statut", // Le texte du bouton change en fonction du statut
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildNotificationCard(index);
                 },
               ),
             ),
@@ -194,19 +63,87 @@ class _CallsInProgressPageState extends State<CallsInProgressPage> {
     );
   }
 
-  // Méthode pour accepter l'appel
-  void _acceptCall(int index) {
-    setState(() {
-      ongoingCalls[index]["status"] =
-          "Appelé"; // Mise à jour du statut à "Appelé"
-    });
+  Widget _buildNotificationCard(int index) {
+    final notification = notifications[index];
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: notification["status"] == "Appeler"
+                  ? Colors.green
+                  : Colors.red,
+              radius: 25,
+              child: Icon(
+                notification["status"] == "Appeler"
+                    ? Icons.call
+                    : Icons.call_end,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification["name"]!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Numéro: ${notification["phoneNumber"]}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Date: ${notification["date"]}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            notification["status"] == "Appeler"
+                ? ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: () => _updateStatus(index, "Appelé"),
+                    child: const Text("Accepter"),
+                  )
+                : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    onPressed: () => _updateStatus(index, "Refusé"),
+                    child: const Text("Refuser"),
+                  ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // Méthode pour refuser l'appel
-  void _rejectCall(int index) {
+  void _updateStatus(int index, String status) {
     setState(() {
-      ongoingCalls[index]["status"] =
-          "Refusé"; // Mise à jour du statut à "Refusé"
+      notifications[index]["status"] = status;
     });
   }
 }

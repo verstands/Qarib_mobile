@@ -65,7 +65,7 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Téléchargez vos photos'),
+        title: const Text('Téléchargez vos photos', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.orangeAccent,
         centerTitle: true,
       ),
@@ -117,7 +117,7 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text('Soumettre'),
+                  child: const Text('Soumettre', style: TextStyle(color: Colors.white),),
                 ),
               ),
             ],

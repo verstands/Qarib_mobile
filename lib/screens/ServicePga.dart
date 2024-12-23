@@ -1,12 +1,12 @@
-import 'package:emol/constant.dart';
+import 'package:emol/services/UserService.dart';
+import 'package:flutter/material.dart';
 import 'package:emol/models/Servicemodel.dart';
 import 'package:emol/models/api_response.dart';
-import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/services/ServiceService.dart';
 import 'package:emol/utils/Icon_utils.dart';
-import 'package:emol/utils/Menu.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ServicePageCocher extends StatefulWidget {
   const ServicePageCocher({super.key});
@@ -16,42 +16,11 @@ class ServicePageCocher extends StatefulWidget {
 }
 
 class _ServicePageCocherState extends State<ServicePageCocher> {
-  // Liste des services avec des icônes et des descriptions
-  // final List<Map<String, dynamic>> services = [
-  //   {'name': 'Plombier', 'description': 'Réparation et installation de plomberie.', 'icon': Icons.build},
-  //   {'name': 'Electricien', 'description': 'Installation et dépannage électrique.', 'icon': Icons.electrical_services},
-  //   {'name': 'Jardinier', 'description': 'Entretien et création d’espaces verts.', 'icon': Icons.grass},
-  //   {'name': 'Disinsection service', 'description': 'Traitement contre les nuisibles.', 'icon': Icons.local_hospital},
-  //   {'name': 'Peintre', 'description': 'Peinture et rénovation de surfaces.', 'icon': Icons.brush},
-  //   {'name': 'Maçon', 'description': 'Travaux de construction et maçonnerie.', 'icon': Icons.construction},
-  //   {'name': 'Menuisier', 'description': 'Fabrication et réparation de meubles.', 'icon': Icons.chair},
-  //   {'name': 'Couturier', 'description': 'Confection et retouche de vêtements.', 'icon': Icons.dry_cleaning},
-  //   {'name': 'Avocat', 'description': 'Conseils et représentation juridique.', 'icon': Icons.account_balance},
-  //   {'name': 'Cameraman', 'description': 'Captation et montage vidéo.', 'icon': Icons.videocam},
-  //   {'name': 'Coach de sport', 'description': 'Coaching et entraînement personnalisé.', 'icon': Icons.fitness_center},
-  //   {'name': 'Femme/homme de ménage', 'description': 'Entretien ménager pour particuliers et professionnels.', 'icon': Icons.cleaning_services},
-  //   {'name': 'Coiffure/Beauté', 'description': 'Soins de beauté et coiffure à domicile.', 'icon': Icons.person},
-  //   {'name': 'Cours de soutien', 'description': 'Soutien scolaire pour toutes les matières.', 'icon': Icons.school},
-  //   {'name': 'Cuisinier', 'description': 'Chef cuisinier à domicile.', 'icon': Icons.restaurant},
-  //   {'name': 'Réparation mobile', 'description': 'Réparation et dépannage de smartphones.', 'icon': Icons.phone_iphone},
-  //   {'name': 'Réparation électroménager', 'description': 'Dépannage d’appareils électroménagers.', 'icon': Icons.device_thermostat},
-  //   {'name': 'Réparation PC et Mac', 'description': 'Maintenance et réparation informatique.', 'icon': Icons.computer},
-  //   {'name': 'Mécanicien', 'description': 'Réparation et entretien automobile.', 'icon': Icons.car_repair},
-  //   {'name': 'Cycliste', 'description': 'Service de livraison à vélo.', 'icon': Icons.pedal_bike},
-  //   {'name': 'Electricien (véhicule/trottinette)', 'description': 'Dépannage électrique pour véhicules électriques.', 'icon': Icons.two_wheeler},
-  //   {'name': 'Distributeur Légumes', 'description': 'Vente directe de légumes frais.', 'icon': Icons.local_grocery_store},
-  //   {'name': 'Distributeur Fruits', 'description': 'Vente directe de fruits frais.', 'icon': Icons.local_grocery_store},
-  //   {'name': 'Fast food', 'description': 'Livraison rapide de repas.', 'icon': Icons.fastfood},
-  //   {'name': 'Service de déménagement', 'description': 'Aide au déménagement et transport.', 'icon': Icons.transfer_within_a_station},
-  //   {'name': 'Lavage auto', 'description': 'Nettoyage complet de véhicules.', 'icon': Icons.local_car_wash},
-  //   {'name': 'Lavage linge', 'description': 'Service de blanchisserie et pressing.', 'icon': Icons.local_laundry_service},
-  //   {'name': 'Coursier/livreur', 'description': 'Livraison rapide pour particuliers et entreprises.', 'icon': Icons.local_shipping},
-  // ];
-
-  // Liste des services sélectionnés
   final Map<String, bool> selectedServices = {};
   List<ServiceModel> services = [];
+  bool _isLoading = false;
   bool loading = true;
+  String? id;
 
   Future<void> _fetchService() async {
     ApiResponse response = await getServiceAll();
@@ -60,10 +29,11 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
         services = response.data as List<ServiceModel>;
         loading = false;
       });
-    } else if (response.erreur == unauthorized) {
+    } else if (response.erreur == 'unauthorized') {
       Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LoginPage()),
-          (route) => false);
+        MaterialPageRoute(builder: (context) => LoginPage()),
+        (route) => false,
+      );
     } else {
       setState(() {
         loading = false;
@@ -74,10 +44,59 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
     }
   }
 
+  void _saveUserService(List<String?> selectedIds) async {
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    // Filtrer les IDs non null
+    final filteredIds = selectedIds.whereType<String>().toList();
+
+    if (filteredIds.isEmpty) {
+      EasyLoading.showInfo("Aucun service sélectionné.");
+      return;
+    }
+
+    for (String serviceId in filteredIds) {
+      print('Envoi : id_user=$id, id_service=$serviceId'); // Log d'envoi
+      ApiResponse<Map<String, dynamic>> response =
+          await SaveUserServices(id ?? "", serviceId);
+
+      if (response.erreur != null) {
+        print('Erreur lors de la sauvegarde : ${response.erreur}'); // Log d'erreur
+        EasyLoading.showError(
+            "Erreur lors de la sauvegarde du service $serviceId: ${response.erreur}");
+        return; // Arrêtez si une erreur se produit
+      } else {
+        print('Service $serviceId sauvegardé avec succès.'); // Log de succès
+      }
+    }
+
+    EasyLoading.showSuccess("Tous les services ont été sauvegardés.");
+  } catch (e) {
+    print('Erreur inattendue : $e'); // Log d'exception
+    EasyLoading.showError("Erreur inattendue : $e");
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+}
+
+
+  Future<void> getid() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id = prefs.getString('agent_id');
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchService();
+    getid();
   }
 
   @override
@@ -85,7 +104,10 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text("Choisir des services"),
+        title: const Text(
+          "Choisir des services",
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -135,9 +157,6 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
                             });
                           },
                         ),
-                        onTap: () {
-                          // Action lors du clic
-                        },
                       ),
                     );
                   },
@@ -147,10 +166,14 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => MenuUtils()),
-                    (route) => false,
-                  );
+                  // Récupérer les IDs des services cochés
+                  final selectedIds = services
+                      .where((service) =>
+                          selectedServices[service.titre ?? ''] == true)
+                      .map((service) => service.id)
+                      .toList();
+
+                  _saveUserService(selectedIds);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -159,10 +182,12 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
-                child: const Text(
-                  "Valider",
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Valider",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
               ),
             ),
           ],

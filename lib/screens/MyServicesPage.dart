@@ -1,5 +1,11 @@
+import 'package:emol/constant.dart';
+import 'package:emol/models/ServiceByUserModel.dart';
+import 'package:emol/models/api_response.dart';
+import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/ServicePga.dart';
+import 'package:emol/services/ServiceService.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyServicesPage extends StatefulWidget {
   @override
@@ -7,40 +13,114 @@ class MyServicesPage extends StatefulWidget {
 }
 
 class _MyServicesPageState extends State<MyServicesPage> {
-  // Liste des services avec icônes associées
-  final Map<String, IconData> services = {
-    'Plombier': Icons.build,
-    'Electricien': Icons.electrical_services,
-    'Jardinier': Icons.grass,
-    'Disinsection service': Icons.local_hospital,
-    'Peintre': Icons.brush,
-    'Maçon': Icons.construction,
-    'Menuisier': Icons.chair,
-    'Couturier': Icons.dry_cleaning,
-    'Avocat': Icons.account_balance,
-    'Cameraman': Icons.videocam,
-    'Coach de sport': Icons.fitness_center,
-    'Femme/homme de ménage': Icons.cleaning_services,
-    'Coiffure/Beauté': Icons.person,
-    'Cours de soutien': Icons.school,
-    'Cuisinier': Icons.restaurant,
-    'Réparation mobile': Icons.phone_iphone,
-    'Réparation électroménager': Icons.device_thermostat,
-    'Réparation PC et Mac': Icons.computer,
-    'Mécanicien': Icons.car_repair,
-    'Cycliste': Icons.pedal_bike,
-    'Electricien (véhicule/trottinette)': Icons.two_wheeler,
-    'Distributeur Légumes': Icons.local_grocery_store,
-    'Distributeur Fruits': Icons.local_grocery_store,
-    'Fast food': Icons.fastfood,
-    'Service de déménagement': Icons.transfer_within_a_station,
-    'Lavage auto': Icons.local_car_wash,
-    'Lavage linge': Icons.local_laundry_service,
-    'Coursier/livreur': Icons.local_shipping,
-  };
+  String? id;
+  List<ServiceByUserModel> services = [];
+  bool loading = true;
+  List<String> selectedServices = []; // Liste pour les services sélectionnés.
 
-  // Tous les services sont cochés par défaut
-  late Set<String> selectedServices = Set.from(services.keys);
+  Future<void> _fetchService() async {
+    if (id == null) return;
+
+    ApiResponse response = await getServiceByUserAll(id!);
+    if (response.erreur == null) {
+      setState(() {
+        services = response.data as List<ServiceByUserModel>;
+        loading = false;
+        selectedServices = services
+            .map((service) => service.service?.titre ?? '')
+            .toList(); 
+      });
+    } else if (response.erreur == unauthorized) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => LoginPage()),
+        (route) => false,
+      );
+    } else {
+      setState(() {
+        loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${response.erreur}')),
+      );
+    }
+  }
+
+  Future<void> getId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id = prefs.getString('agent_id');
+    });
+    _fetchService(); 
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getId();
+  }
+
+  Future<void> _confirmRemoveService(String serviceName) async {
+  bool? confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.0),
+      ),
+      backgroundColor: Colors.white,
+      title: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 32),
+          const SizedBox(width: 8),
+          const Text(
+            "Confirmation",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+      content: Text(
+        "Voulez-vous vraiment retirer ce service : $serviceName ?",
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black54,
+        ),
+      ),
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.black54,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            textStyle: const TextStyle(fontSize: 16),
+          ),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text("Annuler"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orangeAccent,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text("Confirmer", style: TextStyle(color: Colors.white),),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    setState(() {
+      selectedServices.remove(serviceName);
+    });
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +128,8 @@ class _MyServicesPageState extends State<MyServicesPage> {
       appBar: AppBar(
         backgroundColor: Colors.orangeAccent,
         title: const Text(
-          "Mes Services Choisis",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          "Mes services choisis",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
       ),
@@ -58,27 +138,30 @@ class _MyServicesPageState extends State<MyServicesPage> {
         child: Column(
           children: [
             Expanded(
-              child: ListView.builder(
-                itemCount: services.keys.length,
-                itemBuilder: (context, index) {
-                  String serviceName = services.keys.elementAt(index);
-                  IconData serviceIcon = services[serviceName]!;
-                  return ServiceCard(
-                    name: serviceName,
-                    icon: serviceIcon,
-                    isSelected: selectedServices.contains(serviceName),
-                    onChanged: (isSelected) {
-                      setState(() {
-                        if (isSelected) {
-                          selectedServices.add(serviceName);
-                        } else {
-                          selectedServices.remove(serviceName);
-                        }
-                      });
-                    },
-                  );
-                },
-              ),
+              child: loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.orange))
+              :  ListView.builder(
+                      itemCount: services.length,
+                      itemBuilder: (context, index) {
+                        ServiceByUserModel service = services[index];
+                        String serviceName = service.service?.titre ?? '';
+                        return ServiceCard(
+                          name: serviceName,
+                          icon: Icons.check_circle,
+                          isSelected: selectedServices.contains(serviceName),
+                          onChanged: (isSelected) async {
+                            if (isSelected) {
+                              setState(() {
+                                selectedServices.add(serviceName);
+                              });
+                            } else {
+                              await _confirmRemoveService(serviceName);
+                            }
+                          },
+                        );
+                      },
+                    ),
             ),
             ElevatedButton(
               onPressed: () {

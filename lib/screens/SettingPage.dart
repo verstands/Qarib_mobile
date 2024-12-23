@@ -1,5 +1,6 @@
 import 'package:emol/Translate/TranslatePage.dart';
 import 'package:emol/screens/LanguagePage.dart';
+import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/SecurityPage.dart';
 import 'package:emol/screens/SupportPage.dart';
 import 'package:flutter/material.dart';
@@ -125,14 +126,15 @@ class _SettingPageState extends State<SettingPage> {
             ),
             const Divider(),
 
-            // Bouton de déconnexion
+           
             _buildActionButton(
               icon: Icons.exit_to_app,
               label: Translations.get('Se_déconnecter', _languageCode),
               color: Colors.red,
               onPressed: () {
-                Navigator.pop(
-                    context); // Retourne à la page précédente ou à la page d'accueil
+                 Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => LoginPage()),
+              (route) => false);
               },
             ),
           ],

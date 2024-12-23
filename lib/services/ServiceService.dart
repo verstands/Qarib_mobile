@@ -41,11 +41,11 @@ Future<ApiResponse> getServiceAll() async {
   return apiResponse;
 }
 
-Future<ApiResponse> getServiceByUserAll() async {
+Future<ApiResponse> getServiceByUserAll(String id) async {
   ApiResponse apiResponse = ApiResponse();
   try {
     final response = await http.get(
-      Uri.parse(getAllServiceByUserAll),
+      Uri.parse('${getAllServiceByUserAll}/${id}'),
       headers: {
         'Accept': 'application/json',
       },

@@ -1,5 +1,4 @@
 import 'dart:convert'; // Pour traiter les données JSON
-import 'package:emol/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -11,7 +10,7 @@ class MapWithWebSocket extends StatefulWidget {
 
 class _MapWithWebSocketState extends State<MapWithWebSocket> {
   final WebSocketChannel channel =
-    WebSocketChannel.connect(Uri.parse('ws://185.182.186.58:4005'));
+    WebSocketChannel.connect(Uri.parse('ws://185.182.186.58:4006'));
   GoogleMapController? _mapController;
   final Map<String, Marker> _markers = {};
 
@@ -19,7 +18,6 @@ class _MapWithWebSocketState extends State<MapWithWebSocket> {
   void initState() {
     super.initState();
     print('Initialisation du composant...');
-    print('Connexion au WebSocket : ${getSocket}');
 
     // Écoute des messages WebSocket
     channel.stream.listen(
@@ -32,7 +30,7 @@ class _MapWithWebSocketState extends State<MapWithWebSocket> {
       },
       onDone: () {
         print('WebSocket fermé.');
-      },
+      }, 
     );
 
     print('Écoute du WebSocket configurée.');
@@ -55,10 +53,11 @@ class _MapWithWebSocketState extends State<MapWithWebSocket> {
           markerId: MarkerId(userId),
           position: LatLng(latitude, longitude),
           infoWindow: InfoWindow(title: 'Utilisateur $userId'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Utilisez une couleur par défaut
         );
       });
       print('Marqueur ajouté pour l\'utilisateur $userId.');
+      print('Nombre de marqueurs : ${_markers.length}'); // Log du nombre de marqueurs
     } catch (e) {
       print('Erreur lors du traitement du message WebSocket : $e');
     }
@@ -73,7 +72,7 @@ class _MapWithWebSocketState extends State<MapWithWebSocket> {
       ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(0, 0),
+          target: LatLng(0, 0), // Vous pouvez changer cela si nécessaire
           zoom: 2,
         ),
         markers: _markers.values.toSet(),

@@ -103,3 +103,44 @@ Future<ApiResponse<Map<String, dynamic>>> SaveUserService(String email, String n
   }
   return apiResponse;
 }
+
+
+
+Future<ApiResponse<Map<String, dynamic>>> SaveUserServices(String id_user, String id_service) async {
+   ApiResponse<Map<String, dynamic>> apiResponse = ApiResponse();
+  try {
+    final response = await http.post(
+      Uri.parse(postsaveUserService),
+      headers: {'Accept': 'application/json'},
+      body: {
+        'id_user': id_user, 
+        'id_service': id_service
+      },
+    );
+    switch (response.statusCode) {
+      case 201:
+        apiResponse.data = jsonDecode(response.body);
+        break;
+      case 409:
+         apiResponse.erreur = jsonDecode(response.body)['message'];
+        break;
+       case 400:
+        final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+       case 422:
+        final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+      case 401:
+        apiResponse.erreur = unauthorized;
+        break;
+      default:
+        apiResponse.erreur = somethingwentwrong;
+        break;
+    }
+  } catch (e) {
+    apiResponse.erreur = "Aucune connexionss";
+  }
+  return apiResponse;
+}

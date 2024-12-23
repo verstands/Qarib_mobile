@@ -15,7 +15,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? id;
   String? email;
   String? telephone;
-  String avatarUrl = "https://www.example.com/avatar.jpg"; 
+  String avatarUrl = "https://www.example.com/avatar.jpg";
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -23,39 +23,37 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     getNom();
     getEmail();
-    getTelelephone();
-    getid();
+    getTelephone();
+    getId();
   }
 
-  // Fonction pour récupérer les informations stockées dans SharedPreferences
-   Future<void> getid() async {
+  Future<void> getId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       id = prefs.getString('agent_id');
     });
   }
 
-   Future<void> getNom() async {
+  Future<void> getNom() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       noms = prefs.getString('agent_nom');
     });
   }
 
-   Future<void> getEmail() async {
+  Future<void> getEmail() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       email = prefs.getString('agent_email');
     });
   }
 
-   Future<void> getTelelephone() async {
+  Future<void> getTelephone() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       telephone = prefs.getString('agent_telephone');
     });
   }
-
 
   Future<void> _chooseImageFromGallery() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -66,7 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('avatar_url', avatarUrl);
     }
-  } 
+  }
 
   Future<void> _takePhoto() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
@@ -115,53 +113,58 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profil",  style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Profil", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.orange,
         centerTitle: true,
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-        child: Center( 
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, 
-            crossAxisAlignment: CrossAxisAlignment.center, 
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
-                onTap: _showImageSourceDialog, 
-                child: CircleAvatar(
-                  radius: 80.0,
-                  backgroundImage: avatarUrl.startsWith('http')
-                      ? NetworkImage(avatarUrl)
-                      : FileImage(File(avatarUrl)) as ImageProvider,
-                  backgroundColor: Colors.grey[200],
+                onTap: _showImageSourceDialog,
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 80.0,
+                      backgroundImage: avatarUrl.startsWith('http')
+                          ? NetworkImage(avatarUrl)
+                          : FileImage(File(avatarUrl)) as ImageProvider,
+                      backgroundColor: Colors.grey[200],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                noms ?? '',
+                noms ?? "",
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                email ?? '',
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
-              ),
+              _buildInfoRow(Icons.email, email ?? ""),
               const SizedBox(height: 8),
-              Text(
-                telephone ?? '',
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
-              ),
+              _buildInfoRow(Icons.phone, telephone ?? ""),
               const SizedBox(height: 40),
               _buildActionButton(
                 icon: Icons.edit,
@@ -175,11 +178,27 @@ class _ProfilePageState extends State<ProfilePage> {
                   });
                 },
               ),
-              
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String info) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text(
+          info,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 
@@ -194,7 +213,8 @@ class _ProfilePageState extends State<ProfilePage> {
       icon: Icon(icon, size: 20),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white, backgroundColor: color,
+        foregroundColor: Colors.white,
+        backgroundColor: color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),

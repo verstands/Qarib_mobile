@@ -22,6 +22,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   String? email;
   String? telephone;
   String? city;
+  String? id;
   bool _isLoading = false;
   bool _isLoadingp = false;
   String id_role = '';
@@ -109,11 +110,16 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         EasyLoading.showSuccess(
             "Votre compte a été crée, veuillez vous connectez !");
         Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => LoginPage()),
+            MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false);
       } else {
+         SharedPreferences prefs = await SharedPreferences.getInstance();
+        setState(() {
+          id = response.data!['id'];
+          id = prefs.getString('agent_id');
+        });
         Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => UploadPhotoPage()),
+            MaterialPageRoute(builder: (context) => const UploadPhotoPage()),
             (route) => false);
       }
     } else {

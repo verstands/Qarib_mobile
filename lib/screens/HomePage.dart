@@ -40,22 +40,7 @@ class _HomePageState extends State<HomePage> {
 
   Set<Marker> _markers = {};
 
-  Future<void> _fetchService() async {
-    ApiResponse response = await getServiceByUserAll();
-    if (response.erreur == null) {
-      setState(() {
-        _services = response.data as List<ServiceByUserModel>;
-      });
-    } else if (response.erreur == unauthorized) {
-      Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LoginPage()),
-          (route) => false);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${response.erreur}')),
-      );
-    }
-  }
+  
 
   @override
   void initState() {
@@ -409,6 +394,7 @@ class _HomePageState extends State<HomePage> {
                         builder: (context) =>  MapWithWebSocket(),
                       ),
                     );
+                    //_showAllServices();
                   },
                   child: const Icon(
                     Icons.favorite,
