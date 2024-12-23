@@ -10,7 +10,7 @@ IconData getIconFromString(String iconName) {
       return Icons.grass;
     case "Icon.electrical_services":
       return Icons.electrical_services;
-    case "Icon.build":
+    case "Icons.build":
       return Icons.build;
     case "Icon.construction":
       return Icons.construction;

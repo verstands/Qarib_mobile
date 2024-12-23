@@ -12,7 +12,7 @@ const getVille = '$baseURL/ville';
 const countServiceUser = '$baseURL/serviceuser/count';
 const AllServiceByUser = '$baseURL/serviceuser/all';
 const postsaveUserService = '$baseURL/serviceuser';
-const getFavori = '$baseURL/favori';
+const getFavori = '$baseURL/favori/servicebyuser';
 
 
 

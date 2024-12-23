@@ -15,7 +15,7 @@ Future<ApiResponse> getFavorieByUser(String id) async {
         'Accept': 'application/json',
       },
     );
-    switch (response.statusCode) {
+    switch (response.statusCode){
       case 200:
         apiResponse.data = (jsonDecode(response.body)['data'] as List)
             .map((e) => FavoriModel.fromJson(e))

@@ -4,11 +4,14 @@ import 'dart:ui';
 import 'package:emol/constant.dart';
 import 'package:emol/models/ServiceByUserModel.dart';
 import 'package:emol/models/api_response.dart';
+import 'package:emol/models/favoriModel.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/SearchPage.dart';
 import 'package:emol/screens/page2.dart';
+import 'package:emol/services/FavoriService.dart';
 import 'package:emol/services/ServiceService.dart';
 import 'package:emol/sockets/socket_service.dart';
+import 'package:emol/utils/Icon_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
@@ -30,6 +33,9 @@ class _HomePageState extends State<HomePage> {
   final SocketService _socketService = SocketService();
   List<Map<String, dynamic>> userPositions = [];
   String ville = '';
+  List<FavoriModel> favories = [];
+  bool loadingfavri = true;
+  String? id;
 
   Future<void> getVille() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -39,8 +45,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Set<Marker> _markers = {};
-
-  
 
   @override
   void initState() {
@@ -62,6 +66,55 @@ class _HomePageState extends State<HomePage> {
       _addServiceMarkers(); // Ajouter les marqueurs avec icônes
       _startListeningToPosition(); // Commencer à écouter la position
     });
+  }
+
+  Future<void> getId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id = prefs.getString('agent_id');
+    });
+    if (id != null) {
+      await _fetchFavorie(id!);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID de l’agent introuvable')),
+      );
+    }
+  }
+
+  Future<void> _fetchFavorie(String id) async {
+    print('okkkkkkkkkkkkkkksss');
+
+    try {
+      ApiResponse response = await getFavorieByUser(id);
+      if (response.erreur == null) {
+        setState(() {
+          favories = response.data as List<FavoriModel>;
+          loadingfavri = false;
+        });
+        print('okkkkkkkkkkkkkkk');
+      } else if (response.erreur == unauthorized) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          loadingfavri = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${response.erreur}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        loadingfavri = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erreur lors de la récupération des favoris : $e')),
+      );
+    }
   }
 
   @override
@@ -288,66 +341,142 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showAllServices() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(20),
       ),
-      builder: (context) {
-        return FractionallySizedBox(
-          heightFactor: 0.5,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Tous les services",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+    ),
+    builder: (context) {
+      return FractionallySizedBox(
+        heightFactor: 0.6,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Tous mes favoris",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _services.length,
-                    itemBuilder: (context, index) {
-                      final service = _services[index];
-                      return ListTile(
-                        title: Text(service.id ?? ""),
-                        onTap: () {},
-                      );
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      Navigator.pop(context);
                     },
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const Divider(), // Ligne de séparation pour un meilleur design
+              Expanded(
+                child: loadingfavri
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : favories.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Aucun favori trouvé.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 8.0,
+                              mainAxisSpacing: 8.0,
+                              childAspectRatio: 0.75,
+                            ),
+                            itemCount: favories.length,
+                            itemBuilder: (context, index) {
+                              final favori = favories[index];
+                              return Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                elevation: 6,
+                                child: Stack(
+                                  children: [
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            getIconFromString(
+                                                favori.service?.icon ?? ''),
+                                            color: Colors.orange,
+                                            size: 36,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            favori.service?.titre
+                                                        ?.isNotEmpty ==
+                                                    true
+                                                ? favori.service!.titre!
+                                                : "Titre indisponible",
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 6,
+                                      right: 6,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          // Action pour retirer le favori
+                                        },
+                                        child: const CircleAvatar(
+                                          radius: 12,
+                                          backgroundColor: Colors.red,
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title:  Text(
+        title: Text(
           ville,
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
@@ -381,7 +510,10 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   },
-                  child: const Icon(Icons.search, color: Colors.white,),
+                  child: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 16.0),
                 FloatingActionButton(
@@ -395,6 +527,7 @@ class _HomePageState extends State<HomePage> {
                     //   ),
                     // );
                     _showAllServices();
+                    getId();
                   },
                   child: const Icon(
                     Icons.favorite,
