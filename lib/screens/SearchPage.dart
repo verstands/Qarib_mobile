@@ -21,6 +21,7 @@ class _SearchPageState extends State<SearchPage> {
   Map<String, bool> loadingFavorieMap = {};
   String? id;
   String searchQuery = '';
+  String? selectedCategory;
   final FocusNode _focusNode = FocusNode();
 
   Future<void> _fetchService() async {
@@ -80,7 +81,7 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _fetchService();
     getId();
-    _focusNode.requestFocus();
+    //_focusNode.requestFocus();
   }
 
   @override
@@ -101,11 +102,73 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text("Recherche de services"),
+        title: const Text("Recherche de services", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
         centerTitle: true,
       ),
       body: Column(
         children: [
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50, // Couleur de fond subtile
+                borderRadius: BorderRadius.circular(12), // Coins arrondis
+                border: Border.all(
+                  color: Colors.orange.shade200, // Bordure légère
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.1),
+                    offset: Offset(0, 4),
+                    blurRadius: 10,
+                  ),
+                ], // Ombre douce pour un effet de profondeur
+              ),
+              child: DropdownButton<String>(
+                value: selectedCategory,
+                hint: const Text(
+                  "Sélectionner une catégorie",
+                  style: TextStyle(
+                    color: Colors.orange, // Couleur du texte
+                    fontWeight: FontWeight.bold, // Texte en gras
+                  ),
+                ),
+                onChanged: (newValue) {
+                  setState(() {
+                    selectedCategory = newValue;
+                  });
+                },
+                icon: const Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.orange, // Icône de flèche stylisée
+                ),
+                items: <String>[
+                  'Catégorie 1',
+                  'Catégorie 2',
+                  'Catégorie 3'
+                ] // Liste des catégories
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        color: Colors.black, // Couleur du texte de la catégorie
+                        fontWeight: FontWeight.w500, // Légèrement moins gras
+                      ),
+                    ),
+                  );
+                }).toList(),
+                isExpanded:
+                    true, // S'assure que le menu occupe toute la largeur disponible
+                underline: SizedBox(), // Retire la ligne sous le dropdown
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -173,7 +236,9 @@ class _SearchPageState extends State<SearchPage> {
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
-                                  child: CircularProgressIndicator(color: Colors.orange,),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.orange,
+                                  ),
                                 ) // Affiche un petit loader
                               : IconButton(
                                   icon: const Icon(

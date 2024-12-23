@@ -115,3 +115,33 @@ Future<ApiResponse<Map<String, dynamic>>> SaveUserService(String iduser, String 
   }
   return apiResponse;
 }
+
+Future<ApiResponse> deleteFavorieService(String id) async {
+  ApiResponse apiResponse = ApiResponse();
+  try {
+    final response = await http.delete(
+      Uri.parse('${postFavori}/${id}'),
+      headers: {
+        'Accept': 'application/json',
+      },
+    );
+    switch (response.statusCode){
+      case 200:
+        apiResponse.data = jsonDecode(response.body)['message'];
+        break;
+      case 422:
+         final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+      case 401:
+        apiResponse.erreur = unauthorized;
+        break;
+      default:
+        apiResponse.erreur = somethingwentwrong;
+        break;
+    }
+  } catch (e) {
+    apiResponse.erreur = serverError;
+  }
+  return apiResponse;
+}

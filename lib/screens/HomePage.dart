@@ -35,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   String ville = '';
   List<FavoriModel> favories = [];
   bool loadingfavri = true;
+  bool loadingfavridelete = false;
   String? id;
 
   Future<void> getVille() async {
@@ -83,8 +84,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchFavorie(String id) async {
-    print('okkkkkkkkkkkkkkksss');
-
     try {
       ApiResponse response = await getFavorieByUser(id);
       if (response.erreur == null) {
@@ -92,7 +91,6 @@ class _HomePageState extends State<HomePage> {
           favories = response.data as List<FavoriModel>;
           loadingfavri = false;
         });
-        print('okkkkkkkkkkkkkkk');
       } else if (response.erreur == unauthorized) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => LoginPage()),
@@ -102,6 +100,35 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           loadingfavri = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${response.erreur}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        loadingfavri = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erreur lors de la récupération des favoris : $e')),
+      );
+    }
+  }
+
+  Future<void> _deleteFavorie(String id) async {
+    try {
+      ApiResponse response = await deleteFavorieService(id);
+      if (response.erreur == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('okok')),
+        );
+        await getId();
+      } else if (response.erreur == unauthorized) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false,
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${response.erreur}')),
         );
@@ -427,7 +454,7 @@ class _HomePageState extends State<HomePage> {
                                                         ?.isNotEmpty ==
                                                     true
                                                 ? favori.service!.titre!
-                                                : "Titre indisponible",
+                                                : "",
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
@@ -443,7 +470,7 @@ class _HomePageState extends State<HomePage> {
                                       right: 6,
                                       child: GestureDetector(
                                         onTap: () {
-                                          // Action pour retirer le favori
+                                          _deleteFavorie(favori.id!);
                                         },
                                         child: const CircleAvatar(
                                           radius: 12,

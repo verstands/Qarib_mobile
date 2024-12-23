@@ -43,7 +43,7 @@ class _ModeSelectionPageState extends State<ModeSelectionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sélectionnez un mode'),
+        title: const Text('Sélectionnez un mode', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
         backgroundColor: Colors.orange,
       ),
       body: Container(
