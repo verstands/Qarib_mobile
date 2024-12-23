@@ -150,6 +150,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 ? Center(
                     child: CircularProgressIndicator(
                       color: Colors.orange,
+                                  strokeWidth: 6.0,
+
                     ),
                   )
                 : ElevatedButton(
@@ -189,6 +191,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 ? Center(
                     child: CircularProgressIndicator(
                       color: Colors.orange,
+                                  strokeWidth: 6.0,
+
                     ),
                   )
                 : ElevatedButton(

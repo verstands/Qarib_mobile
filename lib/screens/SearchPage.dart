@@ -114,10 +114,10 @@ class _SearchPageState extends State<SearchPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50, // Couleur de fond subtile
-                borderRadius: BorderRadius.circular(12), // Coins arrondis
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.orange.shade200, // Bordure légère
+                  color: Colors.orange.shade200,
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -126,7 +126,7 @@ class _SearchPageState extends State<SearchPage> {
                     offset: Offset(0, 4),
                     blurRadius: 10,
                   ),
-                ], // Ombre douce pour un effet de profondeur
+                ], 
               ),
               child: DropdownButton<String>(
                 value: selectedCategory,

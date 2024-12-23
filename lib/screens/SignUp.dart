@@ -396,6 +396,8 @@ class _SignUpPageState extends State<SignUpPage> {
                           child: CircularProgressIndicator(
                             color: Colors
                                 .orange,
+                                  strokeWidth: 6.0,
+
                           ),
                         )
                       : ElevatedButton(

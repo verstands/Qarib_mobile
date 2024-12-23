@@ -4,6 +4,7 @@ import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/ServicePga.dart';
 import 'package:emol/services/ServiceService.dart';
+import 'package:emol/utils/Icon_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,14 +142,25 @@ class _MyServicesPageState extends State<MyServicesPage> {
               child: loading
               ? const Center(
                   child: CircularProgressIndicator(color: Colors.orange))
-              :  ListView.builder(
+              : services.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Aucun service trouvé.",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        :  ListView.builder(
                       itemCount: services.length,
                       itemBuilder: (context, index) {
                         ServiceByUserModel service = services[index];
                         String serviceName = service.service?.titre ?? '';
                         return ServiceCard(
                           name: serviceName,
-                          icon: Icons.check_circle,
+                          icon: getIconFromString(
+                                                service.service?.icon ?? ''),
                           isSelected: selectedServices.contains(serviceName),
                           onChanged: (isSelected) async {
                             if (isSelected) {

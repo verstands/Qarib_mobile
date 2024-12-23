@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('okok')),
         );
-        await getId();
+        await _fetchFavorie(id);
       } else if (response.erreur == unauthorized) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => LoginPage()),

@@ -34,10 +34,17 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
     setState(() {
       id = prefs.getString('agent_id');
     });
+    if (id != null) {
+      await _fetchService(id!);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID de l’agent introuvable')),
+      );
+    }
   }
 
-    Future<void> _fetchService() async {
-    ApiResponse response = await countServiceUserService(id!);
+    Future<void> _fetchService(String id) async {
+    ApiResponse response = await countServiceUserService(id);
     if (response.erreur == null) {
        setState(() {
         totalServices = (response.data as CountServiceUserModel).data ?? 0;
@@ -129,7 +136,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
                       const SizedBox(height: 16),
                       _buildStatRow("Total des services", totalServices.toString(), Icons.card_giftcard),
                       const Divider(thickness: 1),
-                      _buildStatRow("Services en cours", "4", Icons.work),
+                      _buildStatRow("Services en cours", totalServices.toString(), Icons.work),
                     ],
                   ),
                 ),
@@ -147,14 +154,14 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
               ),
               const SizedBox(height: 16),
 
-              // Liste des options
+              
               Column(
                 children: [
                   DashboardOption(
                     icon: Icons.card_giftcard,
                     label: "Voir mes services",
                     color: Colors.orangeAccent,
-                    gradientColors: [Colors.orange, Colors.deepOrangeAccent],
+                    gradientColors: [Colors.redAccent, Colors.orangeAccent],
                     onTap: () {
                       Navigator.push(
                         context,
@@ -182,7 +189,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage> {
                     icon: Icons.star,
                     label: "Voir mes évaluations",
                     color: Colors.amber,
-                    gradientColors: [Colors.yellowAccent, Colors.amber],
+                    gradientColors: [Colors.redAccent, Colors.orangeAccent],
                     onTap: () {
                       Navigator.push(
                         context,

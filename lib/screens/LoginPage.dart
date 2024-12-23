@@ -212,6 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: CircularProgressIndicator(
                             color: Colors
                                 .orange,
+                                  strokeWidth: 6.0,
                           ),
                         )
                       : ElevatedButton(
