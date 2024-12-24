@@ -14,29 +14,30 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
   final List<TextEditingController> _controllers =
       List.generate(4, (index) => TextEditingController());
 
-  // Fonction pour changer de champ après la saisie
+
   void _nextField(String value, int index) {
     if (value.isNotEmpty && index < 3) {
       FocusScope.of(context).nextFocus();
     }
   }
 
-  // Fonction pour vérifier le code saisi
+
   void _verifierCode() async {
     String codeSaisi = _controllers.map((controller) => controller.text).join();
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? codeStocke = prefs.getString('code'); // Récupération du code stocké
+    String? codeStocke = prefs.getString('code');
 
     if (codeSaisi == codeStocke) {
-      // Code correct, redirection
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const RoleSelectionPage(),
         ),
       );
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(codeStocke ?? '')),
+      );
     } else {
-      // Code incorrect
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Code incorrect, veuillez réessayer.')),
       );
