@@ -8,14 +8,14 @@ class Service {
   Service({required this.name, required this.icon});
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomePages extends StatefulWidget {
+  const HomePages({super.key});
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePages> {
   // Exemple de liste de services (à remplacer par vos données réelles)
   final List<Service> _services = [
     Service(name: "Service 1", icon: Icons.star),

@@ -1,9 +1,15 @@
 import 'package:emol/constant.dart';
+import 'package:emol/models/CategorieModel.dart';
 import 'package:emol/models/Servicemodel.dart';
 import 'package:emol/models/api_response.dart';
+import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/LoginPage.dart';
+import 'package:emol/screens/exemple.dart';
+import 'package:emol/services/CategorieService.dart';
 import 'package:emol/services/FavoriService.dart';
 import 'package:emol/services/ServiceService.dart';
+import 'package:emol/utils/Menu.dart';
+import 'package:emol/utils/showServiceBottomSheet.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/Icon_utils.dart';
@@ -17,6 +23,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   List<ServiceModel> services = [];
+  List<CategorieModel> categorie = [];
   bool loading = true;
   Map<String, bool> loadingFavorieMap = {};
   String? id;
@@ -24,8 +31,16 @@ class _SearchPageState extends State<SearchPage> {
   String? selectedCategory;
   final FocusNode _focusNode = FocusNode();
 
-  Future<void> _fetchService() async {
-    ApiResponse response = await getServiceAll();
+  Future<void> _fetchService(String newValue) async {
+    // Si selectedCategory est nul, on envoie "All"
+    String categoryToFetch = newValue ?? 'All';
+    setState(() {
+      loading = true;
+    });
+
+    ApiResponse response = await getServiceAll(
+        categoryToFetch); // Utilise la variable categoryToFetch
+
     if (response.erreur == null) {
       setState(() {
         services = response.data as List<ServiceModel>;
@@ -39,6 +54,24 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         loading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${response.erreur}')),
+      );
+    }
+  }
+
+  Future<void> _fetchCategorie() async {
+    ApiResponse response = await getCategorieService();
+    if (response.erreur == null) {
+      setState(() {
+        // Supposons que `CategorieModel` ait un champ `nom`
+        categorie = response.data as List<CategorieModel>;
+      });
+    } else if (response.erreur == unauthorized) {
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${response.erreur}')),
       );
@@ -79,7 +112,13 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _fetchService();
+    _fetchCategorie();
+    if (selectedCategory != null) {
+      _fetchService(
+          selectedCategory!); // Utilise ! seulement si selectedCategory n'est pas nul
+    } else {
+      _fetchService('All'); // Valeur par défaut si selectedCategory est nul
+    }
     getId();
     //_focusNode.requestFocus();
   }
@@ -102,7 +141,10 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orange,
-        title: const Text("Recherche de services", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),),
+        title: const Text(
+          "Recherche de services",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -126,7 +168,7 @@ class _SearchPageState extends State<SearchPage> {
                     offset: Offset(0, 4),
                     blurRadius: 10,
                   ),
-                ], 
+                ],
               ),
               child: DropdownButton<String>(
                 value: selectedCategory,
@@ -137,35 +179,33 @@ class _SearchPageState extends State<SearchPage> {
                     fontWeight: FontWeight.bold, // Texte en gras
                   ),
                 ),
-                onChanged: (newValue) {
+                onChanged: (String? newValue) {
                   setState(() {
                     selectedCategory = newValue;
                   });
+                  // Appel de la fonction _fetchService avec la valeur de newValue
+                  _fetchService(newValue!);
                 },
                 icon: const Icon(
                   Icons.arrow_drop_down,
                   color: Colors.orange, // Icône de flèche stylisée
                 ),
-                items: <String>[
-                  'Catégorie 1',
-                  'Catégorie 2',
-                  'Catégorie 3'
-                ] // Liste des catégories
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: TextStyle(
-                        color: Colors.black, // Couleur du texte de la catégorie
-                        fontWeight: FontWeight.w500, // Légèrement moins gras
-                      ),
+                items: categorie.map((country) {
+                  return DropdownMenuItem(
+                    value: country.id,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.category), // Icône pour le pays
+                        const SizedBox(
+                            width: 8), // Espacement entre l'icône et le texte
+                        Text(country.titre ?? 'Nom non disponible'),
+                      ],
                     ),
                   );
                 }).toList(),
                 isExpanded:
                     true, // S'assure que le menu occupe toute la largeur disponible
-                underline: SizedBox(), // Retire la ligne sous le dropdown
+                underline: const SizedBox(), // Retire la ligne sous le dropdown
               ),
             ),
           ),
@@ -249,8 +289,15 @@ class _SearchPageState extends State<SearchPage> {
                                     _AddFavorie(service.id ?? '');
                                   },
                                 ),
-                          onTap: () {
-                            // Action lors du clic
+                          onTap: () async {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            await prefs.setString(
+                                'selected_service_id', service.id ?? '');
+                            Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (context) => MenuUtils()),
+                                (route) => false);
                           },
                         ),
                       );

@@ -1,42 +1,117 @@
-import 'dart:typed_data';
-import 'dart:ui';
-
 import 'package:emol/constant.dart';
-import 'package:emol/models/ServiceByUserModel.dart';
 import 'package:emol/models/api_response.dart';
 import 'package:emol/models/favoriModel.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/SearchPage.dart';
 import 'package:emol/screens/page2.dart';
 import 'package:emol/services/FavoriService.dart';
-import 'package:emol/services/ServiceService.dart';
-import 'package:emol/sockets/socket_service.dart';
+import 'package:emol/services/UserService.dart';
 import 'package:emol/utils/Icon_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String? idservicemaps; // Paramètre passé au constructeur de HomePage
+
+  HomePage({Key? key, this.idservicemaps}) : super(key: key); // Constructeur
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   late GoogleMapController mapController;
-  final LatLng _initialPosition = const LatLng(48.8566, 2.3522);
-  List<ServiceByUserModel> _services = [];
-  final TextEditingController _serviceNameController = TextEditingController();
-  final SocketService _socketService = SocketService();
-  List<Map<String, dynamic>> userPositions = [];
+  Set<Marker> _markers = Set();
+  late WebSocketChannel channel;
   String ville = '';
-  List<FavoriModel> favories = [];
   bool loadingfavri = true;
   bool loadingfavridelete = false;
   String? id;
+  String? id_agent;
+  List<FavoriModel> favories = [];
+  String? selected_service_id;
+
+   Future<void> getSelect_Id() async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      setState(() {
+        selected_service_id = prefs.getString('selected_service_id');
+      });
+    }
+
+ @override
+void initState() {
+  super.initState();
+  getSelect_Id().then((_) {
+    _getCurrentUserPosition();
+    getVille();
+    if (selected_service_id == null) {
+      _fetchAgentPositions();  // Si l'ID est null, on appelle cette fonction
+    } else {
+      _fetchAgentPositionsService();
+    }
+  });
+
+
+    // _showCurrentLocation();
+    //_startListeningToPosition();
+
+    // Connexion WebSocket pour recevoir les mises à jour de position
+    channel = WebSocketChannel.connect(
+      Uri.parse('ws://185.182.186.58:4005'),
+    );
+
+    // Écoute des mises à jour via WebSocket
+    channel.stream.listen(
+      (message) {
+        print('Message reçu via WebSocket: $message');
+        final data = json.decode(message);
+
+        // Vérification de la structure des données
+        if (data is Map &&
+            data.containsKey('userId') &&
+            data.containsKey('latitude') &&
+            data.containsKey('longitude') &&
+            data.containsKey('nom')) {
+          final latitude = (data['latitude'] is int)
+              ? (data['latitude'] as int).toDouble()
+              : data['latitude'];
+          final longitude = (data['longitude'] is int)
+              ? (data['longitude'] as int).toDouble()
+              : data['longitude'];
+          final services = data['services'] ?? []; // Récupérer les services
+          final name = data['noms']; // Ajouter le nom ici
+
+          setState(() {
+            _updateAgentPosition(data['userId'], latitude, longitude,
+                services: services, name: name); // Passer le nom ici
+          });
+        } else {
+          print('Données WebSocket mal formatées');
+        }
+      },
+      onError: (error) {
+        print('Erreur WebSocket: $error');
+      },
+      onDone: () {
+        print('Connexion WebSocket fermée');
+      },
+    );
+
+     clearSelectedServiceId();
+  }
+
+  Future<void> clearSelectedServiceId() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove('selected_service_id');
+  setState(() {
+    selected_service_id = null;
+  });
+}
 
   Future<void> getVille() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -45,28 +120,46 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Set<Marker> _markers = {};
+  Future<void> _getCurrentUserPosition() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id_agent = prefs.getString('agent_id');
+    });
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
 
-  @override
-  void initState() {
-    super.initState();
-    getVille();
-    _socketService.initializeSocket();
-    _socketService.socket.on('userPositionUpdate', (data) {
-      setState(() {
-        userPositions.add({
-          'userId': data['userId'],
-          'latitude': data['latitude'],
-          'longitude': data['longitude'],
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        print('Permission de localisation non accordée');
+        return;
+      }
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      ApiResponse response = await UpdatePositionUsers(
+          position.latitude, position.longitude, id_agent!);
+      if (response.erreur == null) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Bienvenu')),
+        // );
+      } else if (response.erreur == unauthorized) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          loadingfavri = false;
         });
-      });
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _moveCameraToFitServices();
-      _showCurrentLocation();
-      _addServiceMarkers(); // Ajouter les marqueurs avec icônes
-      _startListeningToPosition(); // Commencer à écouter la position
-    });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${response.erreur}')),
+        );
+      }
+      print(
+          'Position actuelle: Latitude = ${position.latitude}, Longitude = ${position.longitude} ,id = ${id_agent}');
+    } catch (e) {
+      print('Erreur lors de la récupération de la position: $e');
+    }
   }
 
   Future<void> getId() async {
@@ -115,6 +208,281 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  @override
+  void dispose() {
+    // Fermer la connexion WebSocket lorsque le widget est supprimé
+    channel.sink.close();
+    super.dispose();
+  }
+
+  /// 🔹 Récupère les positions des agents avec leurs services depuis l'API
+  Future<void> _fetchAgentPositions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id_agent = prefs.getString('agent_id');
+    });
+
+    print('idddddddd ${id_agent}');
+    final response = await http.get(Uri.parse(
+        'http://185.182.186.58:4005/api/agent/positions/positions/${id_agent}'));
+
+    if (response.statusCode == 200) {
+      print('Réponse de l\'API: ${response.body}');
+
+      final data = json.decode(response.body);
+      if (data is List) {
+        setState(() {
+          _markers = data.map((agent) {
+            final latitude =
+                double.tryParse(agent['latitude'].toString()) ?? 0.0;
+            final longitude =
+                double.tryParse(agent['longitude'].toString()) ?? 0.0;
+
+            // Vérifier si l'agent a des services et les formater
+            final services = (agent['services'] as List<dynamic>?)
+                    ?.map((service) => service['serviceName'])
+                    .join(', ') ??
+                'Aucun service';
+            print('dddddddd $_markers');
+            // Assurer que le nom de l'agent n'est pas null
+            final agentName = agent['nom'] ?? 'Nom inconnu';
+
+            return Marker(
+              markerId: MarkerId(agent['userId']),
+              position: LatLng(latitude, longitude),
+              infoWindow: InfoWindow(
+                title: agentName,
+              ),
+              onTap: () {
+                // Affiche un Dialog avec les services de l'agent
+                _showAgentDetails(agentName, services);
+              },
+            );
+          }).toSet();
+        });
+      } else {
+        print('Erreur: Données mal formatées, attendait une liste.');
+      }
+    } else {
+      throw Exception('Échec de la récupération des positions');
+    }
+  }
+
+  Future<void> _fetchAgentPositionsService() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      id_agent = prefs.getString('agent_id');
+    });
+    final response = await http.get(Uri.parse(
+        'http://185.182.186.58:4005/api/agent/positions/positions/${id_agent}/${selected_service_id}'));
+
+    if (response.statusCode == 200) {
+      print('Réponse de l\'API: ${response.body}');
+
+      final data = json.decode(response.body);
+      if (data is List) {
+        setState(() {
+          _markers = data.map((agent) {
+            final latitude =
+                double.tryParse(agent['latitude'].toString()) ?? 0.0;
+            final longitude =
+                double.tryParse(agent['longitude'].toString()) ?? 0.0;
+
+            // Vérifier si l'agent a des services et les formater
+            final services = (agent['services'] as List<dynamic>?)
+                    ?.map((service) => service['serviceName'])
+                    .join(', ') ??
+                'Aucun service';
+            print('dddddddd $_markers');
+            // Assurer que le nom de l'agent n'est pas null
+            final agentName = agent['nom'] ?? 'Nom inconnu';
+
+            return Marker(
+              markerId: MarkerId(agent['userId']),
+              position: LatLng(latitude, longitude),
+              infoWindow: InfoWindow(
+                title: agentName,
+              ),
+              onTap: () {
+                // Affiche un Dialog avec les services de l'agent
+                _showAgentDetails(agentName, services);
+              },
+            );
+          }).toSet();
+        });
+      } else {
+        print('Erreur: Données mal formatées, attendait une liste.');
+      }
+    } else {
+      throw Exception('Échec de la récupération des positions');
+    }
+  }
+
+  Future<BitmapDescriptor> _getCustomMarker() async {
+    return await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(size: Size(48, 48)), // Taille de l'icône
+      'assets/logo/logo.jpeg', // Chemin de l’image dans les assets
+    );
+  }
+
+  /// 🔹 Affiche les détails de l'agent dans un Dialog
+  void _showAgentDetails(String name, String services) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        List<String> serviceList = services.split(', ');
+
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Titre avec icône et photo de profil
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage(
+                              'assets/agent_profile.jpg'), // Remplacer par l'image du profil
+                          radius: 24,
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.orange, size: 28),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                // Section des services avec icône
+                Row(
+                  children: [
+                    Icon(Icons.business, color: Colors.orange, size: 24),
+                    SizedBox(width: 12),
+                    Text(
+                      'Services associés:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                // Afficher les services avec des cartes
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.orange[50], // Fond légèrement coloré
+                  ),
+                  child: Column(
+                    children: serviceList.map((service) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          children: [
+                            Icon(getIconFromString(service),
+                                color: Colors.orange, size: 22),
+                            SizedBox(width: 12),
+                            Text(
+                              service,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 24),
+                // Bouton "Faire une demande"
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    ),
+                    icon: Icon(Icons.request_page, color: Colors.white),
+                    label: Text(
+                      'Faire une demande',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    onPressed: () {
+                      print("Faire une demande");
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 🔹 Met à jour la position d'un agent et affiche ses services
+  void _updateAgentPosition(String userId, double latitude, double longitude,
+      {List<dynamic>? services, String? name}) async {
+    final markerId = MarkerId(userId);
+    print(
+        'Mise à jour de la position de $userId: lat=$latitude, lon=$longitude');
+
+    final existingMarker = _markers.firstWhere(
+      (marker) => marker.markerId == markerId,
+      orElse: () =>
+          Marker(markerId: markerId, position: LatLng(latitude, longitude)),
+    );
+
+    // Formater les services reçus
+    final serviceText = services != null
+        ? services.map((s) => s['serviceName']).join(', ')
+        : 'Aucun service';
+
+    final customIcon = await _getCustomMarker();
+    setState(() {
+      _markers.remove(existingMarker);
+      _markers.add(Marker(
+        markerId: markerId,
+        position: LatLng(latitude, longitude),
+        icon: customIcon,
+        infoWindow: InfoWindow(
+          title: name ??
+              'Nom Inconnu', // Utiliser le nom transmis ou 'Nom Inconnu'
+          snippet: 'Services: $serviceText',
+        ),
+      ));
+    });
+  }
+
   Future<void> _deleteFavorie(String id) async {
     try {
       ApiResponse response = await deleteFavorieService(id);
@@ -122,7 +490,7 @@ class _HomePageState extends State<HomePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('okok')),
         );
-        await _fetchFavorie(id);
+        _fetchFavorie(id);
       } else if (response.erreur == unauthorized) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => LoginPage()),
@@ -144,114 +512,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  @override
-  void dispose() {
-    _socketService.disconnectSocket();
-    super.dispose();
-  }
-
-  Future<void> _addServiceMarkers() async {
-    Set<Marker> newMarkers = {};
-    for (var service in _services) {
-      final icon = await _getMarkerIcon(
-          Colors.orange); // Icône personnalisée avec couleur orange
-      newMarkers.add(Marker(
-        markerId: MarkerId(service.id ?? ""),
-        infoWindow: InfoWindow(title: service.user?.noms),
-        icon:
-            BitmapDescriptor.fromBytes(icon), // Utilisation de l'icône générée
-      ));
-    }
-    setState(() {
-      _markers = newMarkers;
-    });
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    _moveCameraToFitServices();
-  }
-
-  void _moveCameraToFitServices() {
-    if (_markers.isEmpty) return;
-
-    LatLngBounds bounds = _markers.fold(
-      LatLngBounds(
-        southwest: _markers.first.position,
-        northeast: _markers.first.position,
-      ),
-      (LatLngBounds current, Marker marker) {
-        return LatLngBounds(
-          southwest: LatLng(
-            current.southwest.latitude < marker.position.latitude
-                ? current.southwest.latitude
-                : marker.position.latitude,
-            current.southwest.longitude < marker.position.longitude
-                ? current.southwest.longitude
-                : marker.position.longitude,
-          ),
-          northeast: LatLng(
-            current.northeast.latitude > marker.position.latitude
-                ? current.northeast.latitude
-                : marker.position.latitude,
-            current.northeast.longitude > marker.position.longitude
-                ? current.northeast.longitude
-                : marker.position.longitude,
-          ),
-        );
-      },
-    );
-
-    setState(() {
-      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-    });
-  }
-
-  Future<Uint8List> _getMarkerIcon(Color color) async {
-    final Icon icon =
-        Icon(Icons.circle, color: color, size: 40.0); // Icône ronde
-    final RenderRepaintBoundary boundary = RenderRepaintBoundary();
-    final repaintWidget = RepaintBoundary(
-      child: Icon(icon.icon, color: color, size: 40.0),
-    );
-
-    boundary.paint(context as PaintingContext, Offset.zero);
-    final image = await boundary.toImage(pixelRatio: 3.0);
-    final byteData = await image.toByteData(format: ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
-  }
-
-  void _startListeningToPosition() {
-    Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 16,
-      ),
-    ).listen((Position position) {
-      LatLng newPosition = LatLng(position.latitude, position.longitude);
-
-      setState(() {
-        _markers.removeWhere(
-            (marker) => marker.markerId.value == "current_location");
-        _markers.add(Marker(
-          markerId: const MarkerId("current_location"),
-          position: newPosition,
-          infoWindow: const InfoWindow(title: "Ma position actuelle"),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        ));
-      });
-
-      // Centrer la carte sur la nouvelle position
-      mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(newPosition, 16),
-      );
-    });
-  }
-
   Future<void> _showCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
-
+    // _startListeningToPosition();
     // Vérifier si le service de localisation est activé
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -303,11 +567,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _showSearchBottomSheet() {
+  void _showAllServices() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
-      backgroundColor: Colors.white.withOpacity(0.9),
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
@@ -315,49 +579,115 @@ class _HomePageState extends State<HomePage> {
       ),
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.5,
+          heightFactor: 0.6,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Rechercher un lieu ou un service",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      "Tous mes favoris",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.grey),
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: "Entrez un lieu ou un service",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onChanged: (value) {},
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                  ),
-                  child: const Text("Rechercher"),
+                const Divider(), // Ligne de séparation pour un meilleur design
+                Expanded(
+                  child: loadingfavri
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : favories.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "Aucun favori trouvé.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 8.0,
+                                mainAxisSpacing: 8.0,
+                                childAspectRatio: 0.75,
+                              ),
+                              itemCount: favories.length,
+                              itemBuilder: (context, index) {
+                                final favori = favories[index];
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  elevation: 6,
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              getIconFromString(
+                                                  favori.service?.icon ?? ''),
+                                              color: Colors.orange,
+                                              size: 36,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              favori.service?.titre
+                                                          ?.isNotEmpty ==
+                                                      true
+                                                  ? favori.service!.titre!
+                                                  : "",
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black87,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            _deleteFavorie(favori.id!);
+                                          },
+                                          child: const CircleAvatar(
+                                            radius: 12,
+                                            backgroundColor: Colors.red,
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 16,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
@@ -367,136 +697,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showAllServices() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(20),
+  void _startListeningToPosition() {
+    Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 50,
       ),
-    ),
-    builder: (context) {
-      return FractionallySizedBox(
-        heightFactor: 0.6,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Tous mes favoris",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-              const Divider(), // Ligne de séparation pour un meilleur design
-              Expanded(
-                child: loadingfavri
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : favories.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "Aucun favori trouvé.",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 8.0,
-                              mainAxisSpacing: 8.0,
-                              childAspectRatio: 0.75,
-                            ),
-                            itemCount: favories.length,
-                            itemBuilder: (context, index) {
-                              final favori = favories[index];
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                elevation: 6,
-                                child: Stack(
-                                  children: [
-                                    Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            getIconFromString(
-                                                favori.service?.icon ?? ''),
-                                            color: Colors.orange,
-                                            size: 36,
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            favori.service?.titre
-                                                        ?.isNotEmpty ==
-                                                    true
-                                                ? favori.service!.titre!
-                                                : "",
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black87,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 6,
-                                      right: 6,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          _deleteFavorie(favori.id!);
-                                        },
-                                        child: const CircleAvatar(
-                                          radius: 12,
-                                          backgroundColor: Colors.red,
-                                          child: Icon(
-                                            Icons.close,
-                                            size: 16,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
+    ).listen((Position position) {
+      LatLng newPosition = LatLng(position.latitude, position.longitude);
 
+      setState(() {
+        _markers.removeWhere(
+            (marker) => marker.markerId.value == "current_location");
+        _markers.add(Marker(
+          markerId: const MarkerId("current_location"),
+          position: newPosition,
+          infoWindow: const InfoWindow(title: "Ma position actuelle"),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ));
+      });
+
+      // Centrer la carte sur la nouvelle position
+      mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(newPosition, 1.0),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -510,14 +736,17 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
       body: Stack(
+        // Ajout d'un Stack pour superposer les éléments
         children: [
           GoogleMap(
-            onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
-              target: _initialPosition,
-              zoom: 16,
+              target: LatLng(0.0, 0.0), // Coordonnées de départ
+              zoom: 3.0,
             ),
             markers: _markers,
+            onMapCreated: (GoogleMapController controller) {
+              mapController = controller;
+            },
           ),
           Positioned(
             bottom: 16.0,
@@ -550,7 +779,7 @@ class _HomePageState extends State<HomePage> {
                     // Navigator.push(
                     //   context,
                     //   MaterialPageRoute(
-                    //     builder: (context) =>  MapWithWebSocket(),
+                    //     builder: (context) => MapScreen(),
                     //   ),
                     // );
                     await getId();

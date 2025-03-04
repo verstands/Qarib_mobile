@@ -1,5 +1,6 @@
 import 'package:emol/Translate/TranslatePage.dart';
 import 'package:emol/models/api_response.dart';
+import 'package:emol/screens/ForgetPassword.dart';
 import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/SignUp.dart';
 import 'package:emol/services/LoginService.dart';
@@ -162,10 +163,11 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.end, // Aligne à droite
                   children: [
                     TextButton(
-                      onPressed: () {
-                        // Ajoutez ici la logique pour la réinitialisation du mot de passe
-                        Navigator.pushNamed(context, '/reset-password');
-                      },
+                     onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => ForgetPasswordPage()),
+                        (route) => false);
+                  },
                       child: Text(
                         Translations.get('Mot_de_passe_oublie', _languageCode),
                         style: TextStyle(

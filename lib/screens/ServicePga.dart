@@ -23,7 +23,7 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
   String? id;
 
   Future<void> _fetchService() async {
-    ApiResponse response = await getServiceAll();
+    ApiResponse response = await getServiceAll('e');
     if (response.erreur == null) {
       setState(() {
         services = response.data as List<ServiceModel>;

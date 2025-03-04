@@ -21,7 +21,7 @@ Future<ApiResponse<Map<String, dynamic>>> VerifyCompteService(String email, Stri
         'latitude': '1',
         'longitude': '1',
         'id_role' : 'cm41epeh0000212o4tdtyxacu',
-        'statut': '1'
+        'statut': '0'
       },
     );
     print('eeeeeeeeeeeeeee ${response.statusCode}');
@@ -144,3 +144,48 @@ Future<ApiResponse<Map<String, dynamic>>> SaveUserServices(String id_user, Strin
   }
   return apiResponse;
 }
+
+Future<ApiResponse>UpdatePositionUsers(double latitude, double longitude, String idAgent) async {
+   ApiResponse apiResponse = ApiResponse();
+ 
+  
+  try {
+    final response = await http.put(
+      Uri.parse('$updatePositionAgent/$idAgent'),
+      headers: {'Accept': 'application/json'}, 
+      body: {
+        'userId': idAgent, 
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+      },
+    );
+   print('aaaaaaaaaaaaaaaa${response.statusCode}');
+    switch (response.statusCode) {
+      case 200:
+        apiResponse.data = "dd";
+        break;
+      case 409:
+         apiResponse.erreur = jsonDecode(response.body)['message'];
+        break;
+       case 400:
+        final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+       case 422:
+        final errors = jsonDecode(response.body)['code'];
+        apiResponse.erreur = errors[errors.keys.elementAt(0)][0];
+        break;
+      case 401:
+        apiResponse.erreur = unauthorized;
+        break;
+      default:
+        apiResponse.erreur = somethingwentwrong;
+        break;
+    }
+  } catch (e) {
+    apiResponse.erreur = "Aucune connexionss";
+  }
+  return apiResponse;
+}
+
+

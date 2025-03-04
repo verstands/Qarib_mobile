@@ -14,6 +14,9 @@ const AllServiceByUser = '$baseURL/serviceuser/all';
 const postsaveUserService = '$baseURL/serviceuser';
 const getFavori = '$baseURL/favori/servicebyuser';
 const postFavori = '$baseURL/favori';
+const updatePositionAgent = '$baseURL/agent/positions/positions';
+const getAllCategorie = '$baseURL/service/categorie/categorie';
+
 
 
 

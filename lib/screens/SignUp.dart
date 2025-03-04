@@ -3,8 +3,10 @@ import 'package:emol/models/OtpModel.dart';
 import 'package:emol/models/VilleModel.dart';
 import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/LoginPage.dart';
+import 'package:emol/screens/PrivacyPolicyPage.dart';
 import 'package:emol/screens/RoleSelectionPage.dart';
 import 'package:emol/screens/SaisieCodePage.dart';
+import 'package:emol/screens/TermsOfUsePage.dart';
 import 'package:emol/services/CodeOtpService.dart';
 import 'package:emol/services/UserService.dart';
 import 'package:emol/services/VilleService.dart';
@@ -354,13 +356,10 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              _showPrivacyDialog(
-                                context,
-                                Translations.get(
-                                    'conditions_dutilisation', _languageCode),
-                                Translations.get(
-                                    'Voici_le_texte_des_conditions_d_utilisation',
-                                    _languageCode),
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => TermsOfUsePage(),
+                                ),
                               );
                             },
                         ),
@@ -374,10 +373,10 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              _showPrivacyDialog(
-                                context,
-                                'Politique de confidentialité',
-                                'Voici le texte de la politique de confidentialité...',
+                             Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => PrivacyPolicyPage(),
+                                ),
                               );
                             },
                         ),
@@ -394,10 +393,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   child: _isLoading
                       ? Center(
                           child: CircularProgressIndicator(
-                            color: Colors
-                                .orange,
-                                  strokeWidth: 6.0,
-
+                            color: Colors.orange,
+                            strokeWidth: 6.0,
                           ),
                         )
                       : ElevatedButton(
@@ -407,7 +404,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     setState(() {
                                       _isLoading = true;
                                     });
-                                  
+
                                     ApiResponse responseVerifi =
                                         await VerifyCompteService(
                                             _emailController.text,
@@ -415,20 +412,24 @@ class _SignUpPageState extends State<SignUpPage> {
                                             _passwordController.text,
                                             _phoneController.text,
                                             _selectedCity!);
-                                   
+
                                     if (responseVerifi.erreur == null) {
                                       setState(() {
                                         _isLoading = false;
                                       });
 
                                       SharedPreferences prefs =
-                                            await SharedPreferences
-                                                .getInstance();
-                                        await prefs.setString('emailAgent',  _emailController.text);
-                                        await prefs.setString('nomsAgent',  _nameController.text);
-                                        await prefs.setString('passwordAgent',   _passwordController.text);
-                                        await prefs.setString('phoneAgent',  _phoneController.text);
-                                        await prefs.setString('citeAgent',  _selectedCity!);
+                                          await SharedPreferences.getInstance();
+                                      await prefs.setString(
+                                          'emailAgent', _emailController.text);
+                                      await prefs.setString(
+                                          'nomsAgent', _nameController.text);
+                                      await prefs.setString('passwordAgent',
+                                          _passwordController.text);
+                                      await prefs.setString(
+                                          'phoneAgent', _phoneController.text);
+                                      await prefs.setString(
+                                          'citeAgent', _selectedCity!);
 
                                       ApiResponse response =
                                           await CodeOtpmailService(
@@ -467,7 +468,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                       EasyLoading.showError(
                                           responseVerifi.erreur ??
                                               "Erreur inconnue");
-                                              setState(() {
+                                      setState(() {
                                         _isLoading = false;
                                       });
                                     }

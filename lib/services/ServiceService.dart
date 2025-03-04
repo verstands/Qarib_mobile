@@ -9,11 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:http/http.dart' as http;
 
-Future<ApiResponse> getServiceAll() async {
+Future<ApiResponse> getServiceAll(String id) async {
   ApiResponse apiResponse = ApiResponse();
   try {
     final response = await http.get(
-      Uri.parse(getAllService),
+      Uri.parse('$getAllService/$id'),
       headers: {
         'Accept': 'application/json',
       },

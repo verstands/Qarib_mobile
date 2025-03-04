@@ -36,7 +36,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCl1_Hz7E2DW7NFq919ZnMPWekUpIOMNSY"/>
+            android:value="AIzaSyDMdJyh3k8m3O3yZ1iz6ySxcGxEoqk99og"/>
         <meta-data
         android:name="android.permission-group.LOCATION"
         android:value="pour la navigation et la localisation des services" />

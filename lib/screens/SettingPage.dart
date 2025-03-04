@@ -19,7 +19,7 @@ class _SettingPageState extends State<SettingPage> {
   bool _isDarkModeEnabled = false;
   String _languageCode = "";
 
-   Future<void> _loadLanguage() async {
+  Future<void> _loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _languageCode = prefs.getString('selectedLanguage') ?? "";
@@ -30,14 +30,14 @@ class _SettingPageState extends State<SettingPage> {
   @override
   void initState() {
     super.initState();
-     _loadLanguage();
+    _loadLanguage();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:  Text(Translations.get('Paramètres', _languageCode)),
+        title: Text(Translations.get('Paramètres', _languageCode)),
         backgroundColor: Colors.orange,
         centerTitle: true,
         elevation: 0,
@@ -51,7 +51,8 @@ class _SettingPageState extends State<SettingPage> {
             // Paramètre des notifications
             _buildSwitchTile(
               title: Translations.get('Notifications', _languageCode),
-              subtitle: Translations.get('Recevoir_des_notifications', _languageCode),
+              subtitle:
+                  Translations.get('Recevoir_des_notifications', _languageCode),
               value: _isNotificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -66,7 +67,8 @@ class _SettingPageState extends State<SettingPage> {
             // Paramètre du thème sombre
             _buildSwitchTile(
               title: Translations.get('Mode_sombre', _languageCode),
-              subtitle: Translations.get('Passer_en_mode_sombre', _languageCode),
+              subtitle:
+                  Translations.get('Passer_en_mode_sombre', _languageCode),
               value: _isDarkModeEnabled,
               onChanged: (value) {
                 setState(() {
@@ -77,11 +79,13 @@ class _SettingPageState extends State<SettingPage> {
             const Divider(),
 
             // Titre de section : Autres options
-            _buildSectionTitle(Translations.get('Autres_options', _languageCode)),
+            _buildSectionTitle(
+                Translations.get('Autres_options', _languageCode)),
             // Paramètre de langue
             _buildSettingTile(
               title: Translations.get('Langue', _languageCode),
-              subtitle: Translations.get('Modifier_la_langue_de_lapplication', _languageCode),
+              subtitle: Translations.get(
+                  'Modifier_la_langue_de_lapplication', _languageCode),
               icon: Icons.language,
               onTap: () {
                 Navigator.push(
@@ -97,7 +101,8 @@ class _SettingPageState extends State<SettingPage> {
             // Paramètre de sécurité
             _buildSettingTile(
               title: Translations.get('Securite', _languageCode),
-              subtitle: Translations.get('Modifier_votre_mot_de_passe', _languageCode),
+              subtitle: Translations.get(
+                  'Modifier_votre_mot_de_passe', _languageCode),
               icon: Icons.lock,
               onTap: () {
                 Navigator.push(
@@ -125,16 +130,17 @@ class _SettingPageState extends State<SettingPage> {
               },
             ),
             const Divider(),
-
-           
             _buildActionButton(
               icon: Icons.exit_to_app,
               label: Translations.get('Se_déconnecter', _languageCode),
               color: Colors.red,
-              onPressed: () {
-                 Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => LoginPage()),
-              (route) => false);
+              onPressed: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.clear(); // Supprime toutes les données stockées
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                  (route) => false,
+                );
               },
             ),
           ],
