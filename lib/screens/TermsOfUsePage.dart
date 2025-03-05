@@ -8,7 +8,7 @@ class TermsOfUsePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Conditions d\'utilisation',
+          'الشروط و الأحكام لتطبيق "Qarib"',
           style: TextStyle(color: Colors.white), // Titre en blanc
         ),
         backgroundColor: Colors.orange,
@@ -18,41 +18,79 @@ class TermsOfUsePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bienvenue sur notre application !',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black, // Texte en blanc
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'En utilisant notre application, vous acceptez les conditions d\'utilisation suivantes :',
-                style: TextStyle(fontSize: 16, color: Colors.black), // Texte en blanc
-              ),
-              const SizedBox(height: 20),
-              Text(
-                '1. Acceptation des conditions\n\n'
-                'En accédant ou en utilisant notre application, vous acceptez d\'être lié par ces conditions d\'utilisation et toutes les lois et réglementations locales applicables. Si vous n\'acceptez pas ces conditions, veuillez ne pas utiliser notre application.\n\n'
-                '2. Modification des conditions\n\n'
-                'Nous nous réservons le droit de modifier ces conditions à tout moment sans préavis. Vous êtes invité à consulter régulièrement cette page pour prendre connaissance des mises à jour.\n\n'
-                '3. Utilisation de l\'application\n\n'
-                'Vous vous engagez à ne pas utiliser notre application à des fins illégales ou interdites par ces conditions.\n\n'
-                '4. Responsabilité\n\n'
-                'Nous ne sommes pas responsables des erreurs, des interruptions ou de la disponibilité de l\'application.\n\n'
-                '5. Propriété intellectuelle\n\n'
-                'Tous les contenus de l\'application, y compris mais sans s\'y limiter, les textes, images et logos, sont protégés par des droits d\'auteur et sont la propriété de notre société.\n\n'
-                '6. Résiliation\n\n'
-                'Nous nous réservons le droit de suspendre ou de résilier votre accès à l\'application à tout moment en cas de non-respect de ces conditions.\n\n'
-                '7. Contact\n\n'
-                'Si vous avez des questions concernant ces conditions, veuillez nous contacter via notre page de contact.',
-                style: TextStyle(fontSize: 14, color: Colors.black), // Texte en blanc
+                '1. التعريفات\n\n'
+                'التطبيق: يشير إلى منصة "Qarib"، وهي منصة إلكترونية تربط بين المستخدمين والمهنيين لتسهيل تقديم الخدمات.\n'
+                'المهني: كل شخص مسجل في التطبيق لتقديم الخدمات المدرجة.\n'
+                'المستخدم: كل شخص مسجل في التطبيق للاستفادة من الخدمات المقدمة من قبل المهنيين.\n'
+                'الأطراف: يشير إلى كل من المهنيين والمستخدمين.\n'
+                'إدارة التطبيق: الجهة المالكة لتطبيق "Qarib"، وهي المسؤولة عن تشغيل وإدارة المنصة.\n\n'
+                
+                '2. قبول الشروط\n\n'
+                'باستخدام التطبيق، يقر المستخدمون والمهنيون بأنهم قرأوا ووافقوا على هذه الشروط والأحكام بالكامل.\n'
+                'في حال عدم الموافقة على أي بند، يجب الامتناع عن استخدام التطبيق.\n'
+                'يحتفظ التطبيق بحق تعديل هذه الشروط في أي وقت، وسيتم إخطار المستخدمين بأي تغييرات عبر إشعارات داخل التطبيق.\n\n'
+                
+                '3. مسؤولية التطبيق\n\n'
+                'تطبيق "Qarib" هو وسيط رقمي فقط لتسهيل التواصل بين المستخدمين والمهنيين.\n'
+                'التطبيق لا يضمن:\n'
+                '1. جودة أو كفاءة الخدمات المقدمة من قبل المهنيين.\n'
+                '2. دقة المعلومات التي يقدمها المهنيون أو المستخدمون.\n'
+                '3. التزام المهنيين بالمواعيد المتفق عليها.\n'
+                'التطبيق لا يتحمل أي مسؤولية عن:\n'
+                '1. أي نزاعات تنشأ بين الأطراف.\n'
+                '2. أي خسائر أو أضرار مادية أو معنوية تنتج عن استخدام التطبيق.\n\n'
+                
+                '4. التسجيل\n\n'
+                'يجب على جميع الأطراف تقديم معلومات صحيحة ومحدثة أثناء عملية التسجيل، بما في ذلك الاسم الكامل، رقم الهاتف، والبريد الإلكتروني.\n'
+                'إدارة التطبيق تحتفظ بالحق في التحقق من صحة المعلومات المقدمة.\n'
+                'في حالة تقديم معلومات خاطئة أو مضللة، يحق للتطبيق تعليق أو إلغاء الحساب دون إشعار مسبق.\n\n'
+                
+                '5. سياسة الاستخدام\n\n'
+                'يُمنع استخدام التطبيق لأي أغراض غير قانونية أو غير أخلاقية.\n'
+                'يُمنع التلاعب أو الاحتيال أثناء تقديم الخدمات أو التفاوض عليها.\n'
+                'يلتزم الأطراف بالتعامل بطريقة مهنية واحترام القواعد المعمول بها داخل التطبيق.\n\n'
+                
+                '6. التعاملات المالية\n\n'
+                'التطبيق لا يتدخل في تحديد أسعار الخدمات، ويتم الاتفاق مباشرة بين المستخدم والمهني.\n'
+                'طرق الدفع (نقدًا أو عبر وسائل أخرى) يتم تحديدها بين الطرفين دون تدخل من إدارة التطبيق.\n'
+                'التطبيق لا يتحمل أي مسؤولية عن فشل أو تأخير في الدفع.\n\n'
+                
+                '7. سياسة الإلغاء والاسترجاع\n\n'
+                'أي طلب إلغاء للخدمات يجب أن يتم الاتفاق عليه بين المستخدم والمهني.\n'
+                'التطبيق غير مسؤول عن استرجاع المبالغ المدفوعة، ويجب أن تتم التسويات بين الأطراف.\n\n'
+                
+                '8. الإعفاء من المسؤولية\n\n'
+                'التطبيق يخلي مسؤوليته عن أي أضرار تنتج عن:\n'
+                '1. خدمات غير مكتملة أو غير مطابقة للاتفاق.\n'
+                '2. أي تعامل غير قانوني أو غير أخلاقي بين الأطراف.\n'
+                'التطبيق غير ملزم بحل النزاعات ولكنه قد يوفر وسائل لتقديم الشكاوى.\n\n'
+                
+                '9. خصوصية البيانات\n\n'
+                'يلتزم التطبيق بحماية خصوصية بيانات الأطراف وعدم مشاركتها مع أي طرف ثالث إلا بموافقة المستخدم أو بناءً على طلب قانوني.\n'
+                'يتم استخدام البيانات فقط لتحسين تجربة المستخدم وضمان كفاءة تشغيل المنصة.\n\n'
+                
+                '10. تعليق أو إنهاء الحساب\n\n'
+                'يحتفظ التطبيق بالحق في تعليق أو حذف حساب أي مستخدم أو مهني في الحالات التالية:\n'
+                '1. انتهاك أي من شروط الاستخدام.\n'
+                '2. تقديم معلومات خاطئة أو مضللة.\n'
+                '3. إساءة استخدام المنصة بطريقة تضر بالأطراف الأخرى.\n'
+                'في حالة الإنهاء، لن يتم استرجاع أي رسوم اشتراك أو مدفوعات.\n\n'
+                
+                '11. الشكاوى والنزاعات\n\n'
+                'يمكن تقديم الشكاوى عبر التطبيق من خلال قسم "الدعم".\n'
+                'إدارة التطبيق قد تعمل كوسيط غير رسمي لتوجيه الأطراف نحو حلول ودية، ولكنها ليست ملزمة قانونيًا بذلك.\n'
+                'في حالة النزاعات القانونية، يتم الرجوع إلى المحاكم المغربية المختصة.\n\n'
+                
+                '12. القوانين المطبقة\n\n'
+                'تخضع هذه الشروط والأحكام للقوانين واللوائح المعمول بها في المملكة المغربية.\n'
+                'أي نزاع قانوني سيتم النظر فيه ضمن الاختصاص القضائي.\n\n',
+
+                style: TextStyle(fontSize: 14, color: Colors.black), // Texte en noir
               ),
               const SizedBox(height: 40),
             ],
           ),
         ),
-      
     );
   }
 }

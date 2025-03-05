@@ -326,16 +326,17 @@ void initState() {
   }
 
   /// 🔹 Affiche les détails de l'agent dans un Dialog
-  void _showAgentDetails(String name, String services) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        List<String> serviceList = services.split(', ');
+ void _showAgentDetails(String name, String services) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      List<String> serviceList = services.split(', ');
 
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -349,13 +350,12 @@ void initState() {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: AssetImage(
-                              'assets/agent_profile.jpg'), // Remplacer par l'image du profil
+                          backgroundImage: AssetImage('assets/agent_profile.jpg'),
                           radius: 24,
                         ),
                         SizedBox(width: 12),
                         Text(
-                          name,
+                          '',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -373,6 +373,19 @@ void initState() {
                   ],
                 ),
                 SizedBox(height: 16),
+
+                // Étoiles d'évaluation
+                Row(
+                  children: [
+                    Icon(Icons.star, color: Colors.orange, size: 24),
+                    Icon(Icons.star, color: Colors.orange, size: 24),
+                    Icon(Icons.star, color: Colors.orange, size: 24),
+                    Icon(Icons.star_border, color: Colors.orange, size: 24),
+                    Icon(Icons.star_border, color: Colors.orange, size: 24),
+                  ],
+                ),
+                SizedBox(height: 16),
+
                 // Section des services avec icône
                 Row(
                   children: [
@@ -389,12 +402,13 @@ void initState() {
                   ],
                 ),
                 SizedBox(height: 12),
+
                 // Afficher les services avec des cartes
                 Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.orange[50], // Fond légèrement coloré
+                    color: Colors.orange[50],
                   ),
                   child: Column(
                     children: serviceList.map((service) {
@@ -419,6 +433,57 @@ void initState() {
                   ),
                 ),
                 SizedBox(height: 24),
+
+                // Carrousel d'images de l'agent avec chevauchement
+                Container(
+                  height: 200,
+                  child: PageView(
+                    controller: PageController(viewportFraction: 0.8), // Chevauchement des images
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          _showFullImageDialog('assets/logo/s.png');
+                        },
+                        child: Image.asset('assets/logo/s.png', fit: BoxFit.cover),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          _showFullImageDialog('assets/logo/logo.jpeg');
+                        },
+                        child: Image.asset('assets/logo/logo.jpeg', fit: BoxFit.cover),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          _showFullImageDialog('assets/logo/logo.jpeg');
+                        },
+                        child: Image.asset('assets/logo/logo.jpeg', fit: BoxFit.cover),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // Titre de la description
+                Text(
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(height: 10),
+
+                // Exemple de description
+                Text(
+                  'L\'agent X est un expert dans son domaine, avec plus de 10 ans d\'expérience',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(height: 10),
+
                 // Bouton "Faire une demande"
                 Align(
                   alignment: Alignment.centerRight,
@@ -444,10 +509,30 @@ void initState() {
               ],
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
+void _showFullImageDialog(String imagePath) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          width: double.infinity,
+          child: Image.asset(imagePath, fit: BoxFit.cover),
+        ),
+      );
+    },
+  );
+}
+
+
 
   /// 🔹 Met à jour la position d'un agent et affiche ses services
   void _updateAgentPosition(String userId, double latitude, double longitude,

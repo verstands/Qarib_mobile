@@ -1,3 +1,4 @@
+import 'package:emol/screens/UploadPhotoPage.dart';
 import 'package:emol/services/UserService.dart';
 import 'package:flutter/material.dart';
 import 'package:emol/models/Servicemodel.dart';
@@ -23,7 +24,7 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
   String? id;
 
   Future<void> _fetchService() async {
-    ApiResponse response = await getServiceAll('e');
+    ApiResponse response = await getServiceAll('All');
     if (response.erreur == null) {
       setState(() {
         services = response.data as List<ServiceModel>;
@@ -45,45 +46,50 @@ class _ServicePageCocherState extends State<ServicePageCocher> {
   }
 
   void _saveUserService(List<String?> selectedIds) async {
-  setState(() {
-    _isLoading = true;
-  });
-
-  try {
-    // Filtrer les IDs non null
-    final filteredIds = selectedIds.whereType<String>().toList();
-
-    if (filteredIds.isEmpty) {
-      EasyLoading.showInfo("Aucun service sélectionné.");
-      return;
-    }
-
-    for (String serviceId in filteredIds) {
-      print('Envoi : id_user=$id, id_service=$serviceId'); // Log d'envoi
-      ApiResponse<Map<String, dynamic>> response =
-          await SaveUserServices(id ?? "", serviceId);
-
-      if (response.erreur != null) {
-        print('Erreur lors de la sauvegarde : ${response.erreur}'); 
-        EasyLoading.showError(
-            "Erreur lors de la sauvegarde du service $serviceId: ${response.erreur}");
-        return; // Arrêtez si une erreur se produit
-      } else {
-        print('Service $serviceId sauvegardé avec succès.'); 
-      }
-    }
-
-    EasyLoading.showSuccess("Tous les services ont été sauvegardés.");
-  } catch (e) {
-    print('Erreur inattendue : $e'); 
-    EasyLoading.showError("Erreur inattendue : $e");
-  } finally {
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
-  }
-}
 
+    try {
+      // Filtrer les IDs non null
+      final filteredIds = selectedIds.whereType<String>().toList();
+
+      if (filteredIds.isEmpty) {
+        EasyLoading.showInfo("Aucun service sélectionné.");
+        return;
+      }
+
+      // for (String serviceId in filteredIds) {
+      //   print('Envoi : id_user=$id, id_service=$serviceId'); // Log d'envoi
+      //   // ApiResponse<Map<String, dynamic>> response =
+      //   //     await SaveUserServices(id ?? "", serviceId);
+
+      //   // if (response.erreur != null) {
+      //   //   print('Erreur lors de la sauvegarde : ${response.erreur}');
+      //   //   EasyLoading.showError(
+      //   //       "Erreur lors de la sauvegarde du service $serviceId: ${response.erreur}");
+      //   //   return; // Arrêtez si une erreur se produit
+      //   // } else {
+      //   //   print('Service $serviceId sauvegardé avec succès.');
+      //   // }
+
+      // }
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('selected_service_ids', filteredIds);
+      print('serviceccccccc : $filteredIds');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => UploadPhotoPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      print('Erreur inattendue : $e');
+      EasyLoading.showError("Erreur inattendue : $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> getid() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();

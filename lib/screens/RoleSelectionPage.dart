@@ -2,6 +2,7 @@ import 'package:emol/models/api_response.dart';
 import 'package:emol/screens/HomePage.dart';
 import 'package:emol/screens/LoginPage.dart';
 import 'package:emol/screens/SaisieCodePage.dart';
+import 'package:emol/screens/ServicePga.dart';
 import 'package:emol/screens/UploadPhotoPage.dart';
 import 'package:emol/services/UserService.dart';
 import 'package:emol/utils/Menu.dart';
@@ -80,50 +81,44 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   }
 
   void _signInUser(String role) async {
-    if (role == 'user') {
-       setState(() {
-      _isLoading = true;
-    });
-      id_role = "cm41epeh0000212o4tdtyxacu";
-      status = '1';
-    } else {
-       setState(() {
-      _isLoadingp = true;
-    });
-      id_role = "cm41ep6eu000112o4fbsi2vbd";
-      status = '0';
-
-    }
-    ApiResponse<Map<String, dynamic>> response = await SaveUserService(
-        email!, noms!, password!, telephone!, city!, id_role, status);
-
     setState(() {
-      _isLoading = false;
-    });
-     setState(() {
-      _isLoadingp = false;
+      _isLoading = true;
+      _isLoadingp = (role !=
+          'user'); 
     });
 
-    if (response.erreur == null) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (role == 'user') {
+    if (role == 'user') {
+      id_role = "cm41epeh0000212o4tdtyxacu"; 
+      status = '0';
+      ApiResponse<Map<String, dynamic>> response = await SaveUserService(
+          email!, noms!, password!, telephone!, city!, id_role, status);
+      setState(() {
+        _isLoading = false;
+        _isLoadingp = false;
+      });
+      if (response.erreur == null) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
         EasyLoading.showSuccess(
-            "Votre compte a été crée, veuillez vous connectez !");
+            "Votre compte a été créé, veuillez vous connecter !");
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginPage()),
             (route) => false);
       } else {
-         SharedPreferences prefs = await SharedPreferences.getInstance();
-        setState(() {
-          id = response.data!['id'];
-          id = prefs.getString('agent_id');
-        });
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const UploadPhotoPage()),
-            (route) => false);
+        EasyLoading.showError(response.erreur ?? "");
       }
     } else {
-      EasyLoading.showError(response.erreur ?? "");
+      id_role = "cm41ep6eu000112o4fbsi2vbd";
+      status = '1';
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('agent_id', id_role);
+      setState(() {
+        _isLoading = false;
+        _isLoadingp = false;
+      });
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const ServicePageCocher()),
+          (route) => false);
     }
   }
 
@@ -150,8 +145,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 ? Center(
                     child: CircularProgressIndicator(
                       color: Colors.orange,
-                                  strokeWidth: 6.0,
-
+                      strokeWidth: 6.0,
                     ),
                   )
                 : ElevatedButton(
@@ -191,8 +185,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 ? Center(
                     child: CircularProgressIndicator(
                       color: Colors.orange,
-                                  strokeWidth: 6.0,
-
+                      strokeWidth: 6.0,
                     ),
                   )
                 : ElevatedButton(

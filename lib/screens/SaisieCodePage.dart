@@ -14,13 +14,11 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
   final List<TextEditingController> _controllers =
       List.generate(4, (index) => TextEditingController());
 
-
   void _nextField(String value, int index) {
     if (value.isNotEmpty && index < 3) {
       FocusScope.of(context).nextFocus();
     }
   }
-
 
   void _verifierCode() async {
     String codeSaisi = _controllers.map((controller) => controller.text).join();
@@ -33,9 +31,6 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
         MaterialPageRoute(
           builder: (context) => const RoleSelectionPage(),
         ),
-      );
-       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(codeStocke ?? '')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,7 +46,10 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.orangeAccent,
-        title: Text("Saisie du code", style: TextStyle(fontWeight: FontWeight.bold, color:  Colors.white),),
+        title: Text(
+          "Saisie du code",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -90,20 +88,19 @@ class _SaisieCodePageState extends State<SaisieCodePage> {
             ),
             const SizedBox(height: 40),
             SizedBox(
-  width: double.infinity, // Prend toute la largeur
-  child: ElevatedButton(
-    onPressed: _verifierCode, // Lancer la vérification
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.orangeAccent,
-      padding: const EdgeInsets.all(16), // Augmenter la hauteur
-    ),
-    child: const Text(
-      'Vérifier',
-      style: TextStyle(fontSize: 16, color: Colors.white),
-    ),
-  ),
-),
-
+              width: double.infinity, // Prend toute la largeur
+              child: ElevatedButton(
+                onPressed: _verifierCode, // Lancer la vérification
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orangeAccent,
+                  padding: const EdgeInsets.all(16), // Augmenter la hauteur
+                ),
+                child: const Text(
+                  'Vérifier',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:emol/screens/ServicePga.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -11,14 +10,17 @@ class UploadPhotoPage extends StatefulWidget {
 }
 
 class _UploadPhotoPageState extends State<UploadPhotoPage> {
-  File? _profilePhoto; 
-  File? _idCardPhoto; 
+  File? _profilePhoto;
+  File? _idCardPhoto;
+  List<File> _servicePhotos =
+      []; // Liste pour stocker plusieurs photos de service
   final ImagePicker _picker = ImagePicker();
+  TextEditingController _serviceDescriptionController =
+      TextEditingController(); // Pour la description
 
   Future<void> _pickImage(bool isProfilePhoto) async {
     final XFile? image = await _picker.pickImage(
-      source:
-          ImageSource.gallery, 
+      source: ImageSource.gallery,
     );
 
     if (image != null) {
@@ -48,14 +50,50 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
     }
   }
 
+  Future<void> _pickServicePhoto() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (image != null) {
+      setState(() {
+        _servicePhotos
+            .add(File(image.path)); // Ajout de la nouvelle photo à la liste
+      });
+    }
+  }
+
+  Future<void> _takeServicePhoto() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.camera,
+    );
+
+    if (image != null) {
+      setState(() {
+        _servicePhotos
+            .add(File(image.path)); // Ajout de la nouvelle photo à la liste
+      });
+    }
+  }
+
+  void _removeServicePhoto(int index) {
+    setState(() {
+      _servicePhotos.removeAt(index); // Supprime la photo de la liste
+    });
+  }
+
   void _submit() {
-    if (_profilePhoto != null && _idCardPhoto != null) {
+    if (_profilePhoto != null &&
+        _idCardPhoto != null &&
+        _servicePhotos.isNotEmpty) {
       print('Photos soumises avec succès !');
+      print('Description du service: ${_serviceDescriptionController.text}');
+      // Vous pouvez maintenant sauvegarder ces informations dans votre base de données
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:
-              Text('Veuillez sélectionner les deux photos avant de continuer.'),
+          content: Text(
+              'Veuillez sélectionner toutes les photos et ajouter une description.'),
         ),
       );
     }
@@ -65,7 +103,8 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Téléchargez vos photos', style: TextStyle(color: Colors.white)),
+        title: const Text('Téléchargez vos photos',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.orangeAccent,
         centerTitle: true,
       ),
@@ -96,17 +135,80 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
                 onCameraTap: () => _takePhoto(false),
                 imageFile: _idCardPhoto,
               ),
+              const SizedBox(height: 20),
+              const Text(
+                "Ajoutez des photos pour le service :",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.photo_library, color: Colors.orange),
+                    onPressed: _pickServicePhoto,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt, color: Colors.orange),
+                    onPressed: _takeServicePhoto,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // Affichage des photos de service avec la croix pour suppression
+              if (_servicePhotos.isNotEmpty)
+                GridView.builder(
+                  shrinkWrap: true,
+                  itemCount: _servicePhotos.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(
+                            _servicePhotos[index],
+                            fit: BoxFit.cover,
+                            height: 100, // Ajuste la hauteur de l'image
+                            width: 100, // Ajuste la largeur de l'image
+                          ),
+                        ),
+                        Positioned(
+                          top:
+                              5, // Ajuste la position de l'icône pour mieux l'intégrer à l'image
+                          right: 5,
+                          child: IconButton(
+                            icon: const Icon(Icons.close,
+                                color: Colors.red,
+                                size: 18), // Taille plus petite pour l'icône
+                            onPressed: () => _removeServicePhoto(index),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+              const SizedBox(height: 20),
+              // Champ de description pour le service
+              TextField(
+                controller: _serviceDescriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Description du service',
+                  border: OutlineInputBorder(),
+                ),
+              ),
               const SizedBox(height: 40),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ServicePageCocher(),
-                      ),
-                    );
-                  },
+                  onPressed: _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orangeAccent,
                     padding: const EdgeInsets.symmetric(
@@ -117,7 +219,8 @@ class _UploadPhotoPageState extends State<UploadPhotoPage> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text('Soumettre', style: TextStyle(color: Colors.white),),
+                  child: const Text('Soumettre',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
